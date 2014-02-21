@@ -450,6 +450,7 @@ enum rproc_crash_type {
  * @fw_version: human readable version information extracted from f/w
  * @has_iommu: flag to indicate if remote processor is behind an MMU
  * @use_userspace_loader: flag to denote if remoteproc is loaded by userspace
+ * @late_attach: flag indicating remote core has been externally pre-loaded
  */
 struct rproc {
 	struct list_head node;
@@ -486,6 +487,7 @@ struct rproc {
 	char *fw_version;
 	bool has_iommu;
 	bool use_userspace_loader;
+	u32 late_attach;
 };
 
 /* we currently support only two vrings per rvdev */
