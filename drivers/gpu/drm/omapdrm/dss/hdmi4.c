@@ -42,6 +42,11 @@
 #include "dss_features.h"
 #include "hdmi.h"
 
+static const unsigned int hdmi4_extcon_cable[] = {
+	EXTCON_DISP_HDMI,
+	EXTCON_NONE,
+};
+
 static struct omap_hdmi hdmi;
 
 static int hdmi_runtime_get(void)
@@ -92,8 +97,10 @@ static irqreturn_t hdmi_irq_handler(int irq, void *data)
 		hdmi_wp_set_phy_pwr(wp, HDMI_PHYPWRCMD_LDOON);
 	} else if (irqstatus & HDMI_IRQ_LINK_CONNECT) {
 		hdmi_wp_set_phy_pwr(wp, HDMI_PHYPWRCMD_TXON);
+		extcon_set_state(&hdmi.edev, 1);
 	} else if (irqstatus & HDMI_IRQ_LINK_DISCONNECT) {
 		hdmi_wp_set_phy_pwr(wp, HDMI_PHYPWRCMD_LDOON);
+		extcon_set_state(&hdmi.edev, 0);
 	}
 
 	return IRQ_HANDLED;
@@ -741,6 +748,18 @@ static int hdmi4_bind(struct device *dev, struct device *master, void *data)
 		goto err;
 	}
 
+	hdmi.edev.name = "hdmi";
+	hdmi.edev.supported_cable = hdmi4_extcon_cable;
+	hdmi.edev.dev.parent = &pdev->dev;
+	r = extcon_dev_register(&hdmi.edev);
+	if (r) {
+		DSSERR("Registering HDMI extcon failed %d\n", r);
+		return r;
+	}
+
+	/* Init extcon state to zero */
+	extcon_set_state(&hdmi.edev, 0);
+
 	pm_runtime_enable(&pdev->dev);
 
 	hdmi_init_output(pdev);
@@ -750,6 +769,7 @@ static int hdmi4_bind(struct device *dev, struct device *master, void *data)
 		DSSERR("Registering HDMI audio failed\n");
 		hdmi_uninit_output(pdev);
 		pm_runtime_disable(&pdev->dev);
+		extcon_dev_unregister(&hdmi.edev);
 		return r;
 	}
 
@@ -773,6 +793,8 @@ static void hdmi4_unbind(struct device *dev, struct device *master, void *data)
 	hdmi_pll_uninit(&hdmi.pll);
 
 	pm_runtime_disable(&pdev->dev);
+
+	extcon_dev_unregister(&hdmi.edev);
 }
 
 static const struct component_ops hdmi4_component_ops = {

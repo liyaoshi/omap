@@ -73,6 +73,7 @@ config OMAP2_DSS_HDMI_COMMON
 
 config OMAP4_DSS_HDMI
 	bool "HDMI support for OMAP4"
+	depends on EXTCON
         default y
 	select OMAP2_DSS_HDMI_COMMON
 	help
@@ -80,6 +81,7 @@ config OMAP4_DSS_HDMI
 
 config OMAP5_DSS_HDMI
 	bool "HDMI support for OMAP5"
+	depends on EXTCON
 	default n
 	select OMAP2_DSS_HDMI_COMMON
 	help

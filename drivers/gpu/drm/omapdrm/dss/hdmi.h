@@ -24,6 +24,7 @@
 #include <linux/platform_device.h>
 #include <linux/hdmi.h>
 #include <sound/omap-hdmi-audio.h>
+#include <linux/extcon.h>
 
 #include "omapdss.h"
 #include "dss.h"
@@ -357,6 +358,8 @@ struct omap_hdmi {
 	struct platform_device *audio_pdev;
 	void (*audio_abort_cb)(struct device *dev);
 	int wp_idlemode;
+
+	struct extcon_dev edev;
 
 	bool audio_configured;
 	struct omap_dss_audio audio_config;
