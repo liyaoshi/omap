@@ -55,6 +55,7 @@ struct omap_iommu {
 	u32 id;
 
 	u8 pwrst;
+	u32 late_attach;
 };
 
 struct cr_regs {
