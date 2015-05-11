@@ -20,7 +20,7 @@
 		reg = <0x40>;
 		enable-gpios = <&pcf_lcd 13 GPIO_ACTIVE_LOW>; /* P15, CON_LCD_PWR_DN */
 
-		port {
+		port@lcd {
 			tlc_in: endpoint {
 				remote-endpoint = <&dpi_out>;
 			};
@@ -51,7 +51,7 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		port {
+		port@lcd {
 			reg = <0>;
 
 			dpi_out: endpoint {
