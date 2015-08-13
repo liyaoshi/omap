@@ -24,6 +24,7 @@
 /* hwspinlock mode argument */
 #define HWLOCK_IRQSTATE	0x01	/* Disable interrupts, save state */
 #define HWLOCK_IRQ	0x02	/* Disable interrupts, don't save state */
+#define HWLOCK_MUTEX	0x03	/* Use a mutex for contexts that sleep */
 
 struct device;
 struct device_node;
@@ -242,6 +243,12 @@ int hwspin_lock_timeout_irq(struct hwspinlock *hwlock, unsigned int to)
 	return __hwspin_lock_timeout(hwlock, to, HWLOCK_IRQ, NULL);
 }
 
+static inline
+int hwspin_lock_timeout_can_sleep(struct hwspinlock *hwlock, unsigned int to)
+{
+	return __hwspin_lock_timeout(hwlock, to, HWLOCK_MUTEX, NULL);
+}
+
 /**
  * hwspin_lock_timeout() - lock an hwspinlock with timeout limit
  * @hwlock: the hwspinlock to be locked
@@ -299,6 +306,11 @@ static inline void hwspin_unlock_irqrestore(struct hwspinlock *hwlock,
 static inline void hwspin_unlock_irq(struct hwspinlock *hwlock)
 {
 	__hwspin_unlock(hwlock, HWLOCK_IRQ, NULL);
+}
+
+static inline void hwspin_unlock_can_sleep(struct hwspinlock *hwlock)
+{
+	__hwspin_unlock(hwlock, HWLOCK_MUTEX, NULL);
 }
 
 /**
