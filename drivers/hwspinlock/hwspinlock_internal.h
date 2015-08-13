@@ -49,6 +49,7 @@ struct hwspinlock_ops {
 struct hwspinlock {
 	struct hwspinlock_device *bank;
 	spinlock_t lock;
+	struct mutex mutex;
 	unsigned int type;
 	void *priv;
 };
