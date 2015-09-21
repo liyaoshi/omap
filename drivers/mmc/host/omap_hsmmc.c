@@ -1778,22 +1778,6 @@ static void set_data_timeout(struct omap_hsmmc_host *host,
 	if (clkd == 0)
 		clkd = 1;
 
-	if (host->need_i834_errata) {
-		unsigned long delta;
-
-		delta = (timeout_clks / (host->clk_rate / clkd));
-
-		/*
-		 * We should really be using just timeout_ns + delta,
-		 * however we have no control over when DMA will
-		 * actually start transferring; due to that we will add
-		 * an extra slack to make sure we don't expire too
-		 * early.
-		 */
-		host->data_timeout = timeout_ns + delta + MMC_SOFT_TIMER_SLACK;
-		return;
-	}
-
 	cycle_ns = 1000000000 / (host->clk_rate / clkd);
 	timeout = timeout_ns / cycle_ns;
 	timeout += timeout_clks;
@@ -1810,13 +1794,17 @@ static void set_data_timeout(struct omap_hsmmc_host *host,
 			dto -= 13;
 		else
 			dto = 0;
-		if (dto > 14)
-			dto = 14;
 	}
 
-	reg &= ~DTO_MASK;
-	reg |= dto << DTO_SHIFT;
-	OMAP_HSMMC_WRITE(host->base, SYSCTL, reg);
+	if (host->need_i834_errata) {
+		host->data_timeout = (1 << (dto + 13)) * cycle_ns;
+	} else {
+		if (dto > 14)
+			dto = 14;
+		reg &= ~DTO_MASK;
+		reg |= dto << DTO_SHIFT;
+		OMAP_HSMMC_WRITE(host->base, SYSCTL, reg);
+	}
 }
 
 static void omap_hsmmc_start_dma_transfer(struct omap_hsmmc_host *host)
