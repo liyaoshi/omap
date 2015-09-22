@@ -140,11 +140,11 @@ EXPORT_SYMBOL(dma_mark_declared_memory_occupied);
 /**
  * dma_alloc_from_coherent() - try to allocate memory from the per-device coherent area
  *
- * @dev:	device from which we allocate memory
- * @size:	size of requested memory area
- * @dma_handle:	This will be filled with the correct dma handle
- * @ret:	This pointer will be filled with the virtual address
- *		to allocated area.
+ * @dev:        device from which we allocate memory
+ * @size:       size of requested memory area
+ * @dma_handle: This will be filled with the correct dma handle
+ * @ret:        This pointer will be filled with the virtual address
+ *              to allocated area.
  *
  * This function should be only called from per-arch dma_alloc_coherent()
  * to support allocation from per-device coherent memory pools.
@@ -153,7 +153,32 @@ EXPORT_SYMBOL(dma_mark_declared_memory_occupied);
  * generic memory areas, or !0 if dma_alloc_coherent should return @ret.
  */
 int dma_alloc_from_coherent(struct device *dev, ssize_t size,
-				       dma_addr_t *dma_handle, void **ret)
+					dma_addr_t *dma_handle, void **ret)
+{
+	return dma_malloc_from_coherent(dev, size, dma_handle, ret, true);
+}
+EXPORT_SYMBOL(dma_alloc_from_coherent);
+
+/**
+ * dma_malloc_from_coherent() - try to allocate memory from the per-device
+ * coherent area with option to zero memory
+ *
+ * @dev:	device from which we allocate memory
+ * @size:	size of requested memory area
+ * @dma_handle:	This will be filled with the correct dma handle
+ * @ret:	This pointer will be filled with the virtual address
+ *		to allocated area.
+ * @zero:	should the memory be zero-ed or not
+ *
+ * This function should be only called from per-arch dma_alloc_coherent()
+ * to support allocation from per-device coherent memory pools.
+ *
+ * Returns 0 if dma_alloc_coherent should continue with allocating from
+ * generic memory areas, or !0 if dma_alloc_coherent should return @ret.
+ */
+int dma_malloc_from_coherent(struct device *dev, ssize_t size,
+					 dma_addr_t *dma_handle, void **ret,
+					 bool zero)
 {
 	struct dma_coherent_mem *mem;
 	int order = get_order(size);
@@ -181,7 +206,8 @@ int dma_alloc_from_coherent(struct device *dev, ssize_t size,
 	 */
 	*dma_handle = mem->device_base + (pageno << PAGE_SHIFT);
 	*ret = mem->virt_base + (pageno << PAGE_SHIFT);
-	memset(*ret, 0, size);
+	if (zero)
+		memset(*ret, 0, size);
 	spin_unlock_irqrestore(&mem->spinlock, flags);
 
 	return 1;
@@ -195,7 +221,7 @@ err:
 	 */
 	return mem->flags & DMA_MEMORY_EXCLUSIVE;
 }
-EXPORT_SYMBOL(dma_alloc_from_coherent);
+EXPORT_SYMBOL(dma_malloc_from_coherent);
 
 /**
  * dma_release_from_coherent() - try to free the memory allocated from per-device coherent memory pool

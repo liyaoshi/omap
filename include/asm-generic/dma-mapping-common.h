@@ -242,16 +242,16 @@ dma_get_sgtable_attrs(struct device *dev, struct sg_table *sgt, void *cpu_addr,
 #define arch_dma_alloc_attrs(dev, flag)	(true)
 #endif
 
-static inline void *dma_alloc_attrs(struct device *dev, size_t size,
+static inline void *dma_malloc_attrs(struct device *dev, size_t size,
 				       dma_addr_t *dma_handle, gfp_t flag,
-				       struct dma_attrs *attrs)
+				       struct dma_attrs *attrs, bool zero)
 {
 	struct dma_map_ops *ops = get_dma_ops(dev);
 	void *cpu_addr;
 
 	BUG_ON(!ops);
 
-	if (dma_alloc_from_coherent(dev, size, dma_handle, &cpu_addr))
+	if (dma_malloc_from_coherent(dev, size, dma_handle, &cpu_addr, zero))
 		return cpu_addr;
 
 	if (!arch_dma_alloc_attrs(&dev, &flag))
@@ -262,6 +262,13 @@ static inline void *dma_alloc_attrs(struct device *dev, size_t size,
 	cpu_addr = ops->alloc(dev, size, dma_handle, flag, attrs);
 	debug_dma_alloc_coherent(dev, size, *dma_handle, cpu_addr);
 	return cpu_addr;
+}
+
+static inline void *dma_alloc_attrs(struct device *dev, size_t size,
+				       dma_addr_t *dma_handle, gfp_t flag,
+				       struct dma_attrs *attrs)
+{
+	return dma_malloc_attrs(dev, size, dma_handle, flag, attrs, true);
 }
 
 static inline void dma_free_attrs(struct device *dev, size_t size,
@@ -281,6 +288,12 @@ static inline void dma_free_attrs(struct device *dev, size_t size,
 
 	debug_dma_free_coherent(dev, size, cpu_addr, dma_handle);
 	ops->free(dev, size, cpu_addr, dma_handle, attrs);
+}
+
+static inline void *dma_malloc_coherent(struct device *dev, size_t size,
+		dma_addr_t *dma_handle, gfp_t flag)
+{
+	return dma_malloc_attrs(dev, size, dma_handle, flag, NULL, false);
 }
 
 static inline void *dma_alloc_coherent(struct device *dev, size_t size,
