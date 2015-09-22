@@ -244,6 +244,7 @@ dtb-$(CONFIG_ARCH_OMAP2PLUS) += omap2420-h4.dtb \
 	dra7-evm-lcd10.dtb \
 	dra7-evm-lcd-osd.dtb \
 	dra7-evm-lcd7-late-attach.dtb \
+	dra7-evm-lcd7-late-attach-no-map.dtb \
 	dra7-evm-vision.dtb \
 	dra7-hs-evm.dtb \
 	dra7-hs-evm-lcd7.dtb \
