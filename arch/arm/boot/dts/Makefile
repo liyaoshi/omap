@@ -494,6 +494,7 @@ dtb-$(CONFIG_SOC_DRA7XX) += \
 	dra7-evm.dtb \
 	dra7-evm-lcd-lg.dtb \
 	dra7-evm-lcd-lg-late-attach.dtb \
+	dra7-evm-lcd-lg-late-attach-no-map.dtb \
 	dra7-evm-lcd-osd.dtb \
 	dra7-evm-lcd-osd101t2587.dtb \
 	dra7-evm-vision.dtb \
