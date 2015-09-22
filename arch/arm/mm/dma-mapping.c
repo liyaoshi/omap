@@ -773,7 +773,7 @@ static void *arm_dma_malloc(struct device *dev, size_t size, dma_addr_t *handle,
 	pgprot_t prot = __get_dma_pgprot(attrs, PAGE_KERNEL);
 	void *memory;
 
-	if (dma_alloc_from_coherent(dev, size, handle, &memory))
+	if (dma_malloc_from_coherent(dev, size, handle, &memory, false))
 		return memory;
 
 	return __dma_alloc(dev, size, handle, gfp, prot, false,
