@@ -323,6 +323,17 @@
 		>;
 	};
 
+	mmc1_pins_sdr104: pinmux_mmc1_sdr104_pins {
+		pinctrl-single,pins = <
+			0x354 (PIN_INPUT_PULLUP | MANUAL_MODE | MUX_MODE0)	/* mmc1_clk.clk */
+			0x358 (PIN_INPUT_PULLUP | MANUAL_MODE | MUX_MODE0)	/* mmc1_cmd.cmd */
+			0x35c (PIN_INPUT_PULLUP | MANUAL_MODE | MUX_MODE0)	/* mmc1_dat0.dat0 */
+			0x360 (PIN_INPUT_PULLUP | MANUAL_MODE | MUX_MODE0)	/* mmc1_dat1.dat1 */
+			0x364 (PIN_INPUT_PULLUP | MANUAL_MODE | MUX_MODE0)	/* mmc1_dat2.dat2 */
+			0x368 (PIN_INPUT_PULLUP | MANUAL_MODE | MUX_MODE0)	/* mmc1_dat3.dat3 */
+		>;
+	};
+
 	mmc2_pins_default: mmc2_pins_default {
 		pinctrl-single,pins = <
 			0x9c (PIN_INPUT_PULLUP | MUX_MODE1) /* gpmc_a23.mmc2_clk */
@@ -354,6 +365,21 @@
 	};
 
 	mmc2_pins_ddr_3_3v: pinmux_mmc2_ddr_3_3v_pins {
+		pinctrl-single,pins = <
+			0x9c (PIN_INPUT_PULLUP | MANUAL_MODE | MUX_MODE1) /* gpmc_a23.mmc2_clk */
+			0xb0 (PIN_INPUT_PULLUP | MANUAL_MODE | MUX_MODE1) /* gpmc_cs1.mmc2_cmd */
+			0xa0 (PIN_INPUT_PULLUP | MANUAL_MODE | MUX_MODE1) /* gpmc_a24.mmc2_dat0 */
+			0xa4 (PIN_INPUT_PULLUP | MANUAL_MODE | MUX_MODE1) /* gpmc_a25.mmc2_dat1 */
+			0xa8 (PIN_INPUT_PULLUP | MANUAL_MODE | MUX_MODE1) /* gpmc_a26.mmc2_dat2 */
+			0xac (PIN_INPUT_PULLUP | MANUAL_MODE | MUX_MODE1) /* gpmc_a27.mmc2_dat3 */
+			0x8c (PIN_INPUT_PULLUP | MANUAL_MODE | MUX_MODE1) /* gpmc_a19.mmc2_dat4 */
+			0x90 (PIN_INPUT_PULLUP | MANUAL_MODE | MUX_MODE1) /* gpmc_a20.mmc2_dat5 */
+			0x94 (PIN_INPUT_PULLUP | MANUAL_MODE | MUX_MODE1) /* gpmc_a21.mmc2_dat6 */
+			0x98 (PIN_INPUT_PULLUP | MANUAL_MODE | MUX_MODE1) /* gpmc_a22.mmc2_dat7 */
+		>;
+	};
+
+	mmc2_pins_hs200: pinmux_mmc2_hs200_pins {
 		pinctrl-single,pins = <
 			0x9c (PIN_INPUT_PULLUP | MANUAL_MODE | MUX_MODE1) /* gpmc_a23.mmc2_clk */
 			0xb0 (PIN_INPUT_PULLUP | MANUAL_MODE | MUX_MODE1) /* gpmc_cs1.mmc2_cmd */
@@ -744,12 +770,13 @@ i2c_p3_exp: &i2c2 {
 	 * is always hardwired.
 	 */
 	cd-gpios = <&gpio6 27 0>;
-	pinctrl-names = "default", "hs", "sdr12", "sdr25", "ddr50";
+	pinctrl-names = "default", "hs", "sdr12", "sdr25", "ddr50", "sdr104";
 	pinctrl-0 = <&mmc1_pins_default>;
 	pinctrl-1 = <&mmc1_pins_hs>;
 	pinctrl-2 = <&mmc1_pins_sdr12>;
 	pinctrl-3 = <&mmc1_pins_sdr25>;
 	pinctrl-4 = <&mmc1_pins_ddr50 &mmc1_iodelay_ddr50_conf_sr11>;
+	pinctrl-5 = <&mmc1_pins_sdr104>;
 	sd-uhs-ddr50;
 	sd-uhs-sdr25;
 	sd-uhs-sdr12;
@@ -759,10 +786,11 @@ i2c_p3_exp: &i2c2 {
 	status = "okay";
 	vmmc-supply = <&evm_3v3_sw>;
 	bus-width = <8>;
-	pinctrl-names = "default", "hs", "ddr_3_3v";
+	pinctrl-names = "default", "hs", "ddr_3_3v", "hs200";
 	pinctrl-0 = <&mmc2_pins_default>;
 	pinctrl-1 = <&mmc2_pins_hs>;
 	pinctrl-2 = <&mmc2_pins_ddr_3_3v &mmc2_iodelay_ddr_3_3v_conf_sr11>;
+	pinctrl-3 = <&mmc2_pins_hs200>;
 	mmc-ddr-1_8v;
 };
 
