@@ -129,6 +129,19 @@
 		display0 = &hdmi0;
 		sound0 = &primary_sound;
 		sound1 = &hdmi;
+		mmc1 = &mmc1;
+		mmc2 = &mmc2;
+		mmc3 = &mmc3;
+		mmc4 = &mmc4;
+	};
+
+	chosen {
+		mmc1_pinctl4_iodelay = <&mmc1_iodelay_ddr50_conf_sr11 &mmc1_iodelay_ddr50_conf_sr20>;
+		mmc1_pinctl5_iodelay = <&mmc1_iodelay_dummy_conf_sr11 &mmc1_iodelay_sdr104_conf_sr20>;
+		mmc2_pinctl2_iodelay = <&mmc2_iodelay_ddr_3_3v_conf_sr11 &mmc2_iodelay_ddr_3_3v_conf_sr20>;
+		mmc2_pinctl3_iodelay = <&mmc2_iodelay_dummy_conf_sr11 &mmc2_iodelay_hs200_conf_sr20>;
+		mmc4_pinctl0_iodelay = <&mmc4_iodelay_ds_manual1_conf_sr11 &mmc4_iodelay_ds_manual1_conf_sr20>;
+		mmc4_pinctl1_iodelay = <&mmc4_iodelay_manual1_conf_sr11 &mmc4_iodelay_manual1_conf_sr20>;
 	};
 
 	hdmi0: connector@1 {
