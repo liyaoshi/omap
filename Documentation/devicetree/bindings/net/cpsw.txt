@@ -27,12 +27,18 @@ Optional properties:
 
 Slave Properties:
 Required properties:
-- phy_id		: Specifies slave phy id
+- phy_id		: Specifies slave phy id (optional if using fixed-link)
 - phy-mode		: The interface between the SoC and the PHY (a string
 			  that of_get_phy_mode() can understand)
 - mac-address		: Specifies slave MAC address
 
 Optional properties:
+- fixed-link		: Specifies the slave is connected to a fixed link MAC
+			  that is always up and does not have a PHY dedicated
+			  for the connection (i.e., an Ethernet switch with
+			  dedicated MAC for the CPU). See the binding in
+			  Documentation/devicetree/net/fixed-link.txt for more
+			  information.
 - dual_emac_res_vlan	: Specifies VID to be used to segregate the ports
 
 Note: "ti,hwmods" field is used to fetch the base address and irq
