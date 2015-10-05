@@ -33,6 +33,11 @@ The following optional properties are _required_ only during "late attach":
                         bootloader. This property is only relevant for initial
                         boot, so is removed by the driver during the first
                         probe.
+- ti,late-attach-dma-pool : Flag to indicate that the pagetable has been allocated
+                            from a DMA pool instead of the usual CMA pool for late
+                            attach case. This property is only relevant for initial
+                            boot, so is removed by the driver during the first
+                            probe.
 - ti,no-reset-on-init : Flag to let the hwmod layer not reset the IOMMU at init
 - ti,no-idle-on-init  : Flag to let the hwmod layer not idle and disable IOMMU
                         at init
