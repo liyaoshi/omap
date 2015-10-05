@@ -44,6 +44,7 @@ struct omap_iommu {
 	 * but share it globally for each iommu.
 	 */
 	u32		*iopgd;
+	u32		iopgd_pa;
 	spinlock_t	page_table_lock; /* protect iopgd */
 
 	int		nr_tlb_entries;
@@ -62,6 +63,7 @@ struct omap_iommu {
 	u32 id;
 
 	u32 late_attach;
+	u32 late_attach_dma_pool;
 	u8 pwrst;
 };
 
