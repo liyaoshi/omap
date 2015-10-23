@@ -2089,6 +2089,20 @@ static int omap_execute_tuning(struct mmc_host *mmc, u32 opcode)
 	unsigned long flags;
 
 	host  = mmc_priv(mmc);
+
+	/* clock tuning is not needed for upto 52MHz */
+	if (ios->clock <= EMMC_HSDDR_SD_SDR25_MAX)
+		return 0;
+
+	/*
+	 * Host Controller needs tuning only in case of SDR104 mode
+	 * and for SDR50 mode when Use Tuning for SDR50 is set in
+	 * Capabilities register.
+	 */
+	capa2 = OMAP_HSMMC_READ(host->base, CAPA2);
+	if ((ios->clock <= SD_SDR50_MAX_FREQ) && !(capa2 & CAPA2_TSDR50))
+		return 0;
+
 	switch (ios->bus_width) {
 	case MMC_BUS_WIDTH_8:
 		tuning_ref = ref_tuning_8bits;
@@ -2107,30 +2121,16 @@ static int omap_execute_tuning(struct mmc_host *mmc, u32 opcode)
 		return -ENOMEM;
 
 	host->tuning_done = 0;
-	/* clock tuning is not needed for upto 52MHz */
-	if (ios->clock <= EMMC_HSDDR_SD_SDR25_MAX)
-		return 0;
-
 	omap_hsmmc_stop_clock(host);
 
 	ac12 = OMAP_HSMMC_READ(host->base, AC12);
-	capa2 = OMAP_HSMMC_READ(host->base, CAPA2);
-
 	ac12 &= ~AC12_UHSMC_MASK;
 	OMAP_HSMMC_WRITE(host->base, AC12, ac12);
 
-	/*
-	 * Host Controller needs tuning only in case of SDR104 mode
-	 * and for SDR50 mode when Use Tuning for SDR50 is set in
-	 * Capabilities register.
-	 */
-	if (ios->clock <= SD_SDR50_MAX_FREQ) {
-		if (!(capa2 & CAPA2_TSDR50))
-			return 0;
+	if (ios->clock <= SD_SDR50_MAX_FREQ)
 		ac12 |= AC12_UHSMC_SDR50;
-	} else {
+	else
 		ac12 |= AC12_UHSMC_SDR104;
-	}
 
 	ac12 |= AC12_UHSMC_SDR104;
 	ac12 |= V1V8_SIGEN;
