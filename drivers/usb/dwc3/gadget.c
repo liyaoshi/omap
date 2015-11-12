@@ -1643,6 +1643,7 @@ try:
 		ret = dwc3_core_reinit(dwc);
 		if (ret) {
 			dev_err(dwc->dev, "core reinit failed\n");
+			spin_unlock_irqrestore(&dwc->lock, flags);
 			return ret;
 		}
 
@@ -1653,6 +1654,7 @@ try:
 		ret = dwc3_gadget_restart(dwc);
 		if (ret) {
 			dev_err(dwc->dev, "failed to re-init gadget\n");
+			spin_unlock_irqrestore(&dwc->lock, flags);
 			return ret;
 		}
 
