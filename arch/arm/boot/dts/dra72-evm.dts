@@ -467,7 +467,7 @@
 					/* VDD_MPU */
 					regulator-name = "smps1";
 					regulator-min-microvolt = <850000>;
-					regulator-max-microvolt = <1250000>;
+					regulator-max-microvolt = <1500000>;
 					regulator-always-on;
 					regulator-boot-on;
 				};
@@ -476,7 +476,7 @@
 					/* VDD_CORE */
 					regulator-name = "smps2";
 					regulator-min-microvolt = <850000>;
-					regulator-max-microvolt = <1060000>;
+					regulator-max-microvolt = <1500000>;
 					regulator-boot-on;
 					regulator-always-on;
 				};
@@ -485,7 +485,7 @@
 					/* VDD_GPU IVA DSPEVE */
 					regulator-name = "smps3";
 					regulator-min-microvolt = <850000>;
-					regulator-max-microvolt = <1250000>;
+					regulator-max-microvolt = <1500000>;
 					regulator-boot-on;
 					regulator-always-on;
 				};
