@@ -928,6 +928,7 @@ static void edt_ft5x06_ts_set_max_support_points(struct device *dev,
 static int edt_ft5x06_ts_probe(struct i2c_client *client,
 					 const struct i2c_device_id *id)
 {
+	struct device_node *node = client->dev.of_node;
 	const struct edt_ft5x06_platform_data *pdata =
 						dev_get_platdata(&client->dev);
 	struct device *dev = &client->dev;
@@ -947,37 +948,18 @@ static int edt_ft5x06_ts_probe(struct i2c_client *client,
 
 	edt_ft5x06_ts_set_max_support_points(dev, tsdata);
 
-	gpio = devm_gpiod_get_optional(&client->dev, "reset", GPIOD_OUT_HIGH);
+	gpio = devm_gpiod_get(&client->dev, "enable");
+
 	if (IS_ERR(gpio)) {
 		error = PTR_ERR(gpio);
 		dev_err(&client->dev,
 			"Failed to request GPIO reset pin, error %d\n", error);
 		return error;
+	} else {
+		gpiod_direction_output(gpio, 1);
 	}
 
 	tsdata->reset_pin = gpio;
-
-	gpio = devm_gpiod_get_optional(&client->dev, "wake", GPIOD_OUT_LOW);
-
-	if (IS_ERR(gpio)) {
-		error = PTR_ERR(gpio);
-		dev_err(&client->dev,
-			"Failed to request GPIO wake pin, error %d\n", error);
-		return error;
-	}
-
-	tsdata->wake_pin = gpio;
-
-	gpio = devm_gpiod_get_optional(&client->dev, "irq", GPIOD_IN);
-
-	if (IS_ERR(gpio)) {
-		error = PTR_ERR(gpio);
-		dev_err(&client->dev,
-			"Failed to request GPIO irq pin, error %d\n", error);
-		return error;
-	}
-
-	tsdata->irq_pin = gpio;
 
 	if (tsdata->wake_pin) {
 		usleep_range(5000, 6000);
@@ -1027,12 +1009,12 @@ static int edt_ft5x06_ts_probe(struct i2c_client *client,
 	__set_bit(EV_KEY, input->evbit);
 	__set_bit(EV_ABS, input->evbit);
 	__set_bit(BTN_TOUCH, input->keybit);
-	input_set_abs_params(input, ABS_X, 0, tsdata->num_x * 64 - 1, 0, 0);
-	input_set_abs_params(input, ABS_Y, 0, tsdata->num_y * 64 - 1, 0, 0);
+	input_set_abs_params(input, ABS_X, 0, 1920, 0, 0);
+	input_set_abs_params(input, ABS_Y, 0, 1200, 0, 0);
 	input_set_abs_params(input, ABS_MT_POSITION_X,
-			     0, tsdata->num_x * 64 - 1, 0, 0);
+			     0, 1920, 0, 0);
 	input_set_abs_params(input, ABS_MT_POSITION_Y,
-			     0, tsdata->num_y * 64 - 1, 0, 0);
+			     0, 1200, 0, 0);
 
 	if (!pdata)
 		touchscreen_parse_properties(input, true);
