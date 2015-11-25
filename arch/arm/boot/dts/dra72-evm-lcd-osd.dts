@@ -9,7 +9,3 @@
 #include "dra72-evm.dts"
 #include "dra7x-evm-lcd-osd.dtsi"
 
-&dss {
-	pinctrl-names = "default";
-	pinctrl-0 = <&vout1_pins>;
-};
