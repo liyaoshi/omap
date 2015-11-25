@@ -28,6 +28,13 @@
 
 	};
 
+	/* TLC chip for LCD panel power and backlight  */
+	tlc59108bl: tlc59108bl@40 {
+		compatible = "ti,tlc59108-bl";
+		reg = <0x40>;
+		enable-gpios = <&pcf_lcd 13 GPIO_ACTIVE_LOW>;  /* P15, CON_LCD_PWR_DN */
+	};
+
 	ldc3001:ldc3001@18 {
 		compatible = "lgphilips,ldc3001";
 		status = "okay";
