@@ -568,6 +568,13 @@
 		#gpio-cells = <2>;
 	};
 
+	pcf_lcd_tc3587x: gpio@27 {
+		compatible = "nxp,pcf8575";
+		reg = <0x27>;
+		gpio-controller;
+		#gpio-cells = <2>;
+	};
+
 	pcf_gpio_21: gpio@21 {
 		compatible = "nxp,pcf8575";
 		reg = <0x21>;

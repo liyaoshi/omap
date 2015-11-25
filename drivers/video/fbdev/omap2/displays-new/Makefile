@@ -1,3 +1,4 @@
+obj-$(CONFIG_DISPLAY_PANEL_TC3587XXBG) += panel-tc3587xxbg.o
 obj-$(CONFIG_DISPLAY_PANEL_TLC59108) += panel-tlc59108.o
 obj-$(CONFIG_DISPLAY_PANEL_DPI) += panel-dpi.o
 obj-$(CONFIG_DISPLAY_ENCODER_TFP410) += encoder-tfp410.o
