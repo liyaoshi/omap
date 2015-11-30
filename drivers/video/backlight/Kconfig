@@ -2,6 +2,14 @@
 # Backlight & LCD drivers configuration
 #
 
+config BACKLIGHT_TLC59108
+	tristate "TLC59108 based Backlight  driver"
+	depends on I2C
+	help
+		Driver for powering the TLC59108 pwm/gpio expander
+		chips. These are found on the LCD daughter boards of DRA7 and
+		DRA72 EVMs.
+
 menuconfig BACKLIGHT_LCD_SUPPORT
 	bool "Backlight & LCD device support"
 	help
