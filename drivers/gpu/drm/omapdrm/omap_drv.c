@@ -705,13 +705,13 @@ static void dev_preclose(struct drm_device *dev, struct drm_file *file)
 
 	/*
 	 * Flush crtcs to finish any pending work.
-	 * Note: this may not be correct if there are multiple applications
-	 * using the drm device, and could possibly result in a timeout from
-	 * omap_crtc_flush() if an other application is actively queuing new
-	 * work.
+	 * Do this only for master client, as other clients cannot create
+	 * any queued work.
 	 */
-	for (i = 0; i < priv->num_crtcs; i++)
-		omap_crtc_flush(priv->crtcs[i]);
+	if (file->is_master) {
+		for (i = 0; i < priv->num_crtcs; i++)
+			omap_crtc_flush(priv->crtcs[i]);
+	}
 
 	kfree(file->driver_priv);
 }
@@ -719,6 +719,23 @@ static void dev_preclose(struct drm_device *dev, struct drm_file *file)
 static void dev_postclose(struct drm_device *dev, struct drm_file *file)
 {
 	DBG("postclose: dev=%p, file=%p", dev, file);
+}
+
+static void omap_master_drop(struct drm_device *dev, struct drm_file *file,
+	bool from_release)
+{
+	struct omap_drm_private *priv = dev->dev_private;
+	int i;
+
+	if (from_release)
+		return;
+
+	/*
+	 * Flush crtcs to finish pending work, so that there is no work queued
+	 * when the client exits.
+	 */
+	for (i = 0; i < priv->num_crtcs; i++)
+		omap_crtc_flush(priv->crtcs[i]);
 }
 
 static const struct vm_operations_struct omap_gem_vm_ops = {
@@ -747,6 +764,7 @@ static struct drm_driver omap_drm_driver = {
 		.lastclose = dev_lastclose,
 		.preclose = dev_preclose,
 		.postclose = dev_postclose,
+		.master_drop = omap_master_drop,
 		.get_vblank_counter = drm_vblank_count,
 		.enable_vblank = omap_irq_enable_vblank,
 		.disable_vblank = omap_irq_disable_vblank,
