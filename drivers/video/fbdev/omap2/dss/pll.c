@@ -7,7 +7,6 @@
 #include <linux/platform_device.h>
 #include <linux/wait.h>
 #include <linux/slab.h>
-#include <linux/sched.h>
 
 #include <video/omapdss.h>
 
@@ -71,33 +70,6 @@ static inline int wait_for_bit_change(void __iomem *base, const u16 offset,
 		if (REG_GET(base, offset, bitnum, bitnum) == value)
 			return value;
 		udelay(1);
-	}
-
-	return !value;
-}
-
-static int wait_for_bit_change_sleep(void __iomem *reg, int bitnum, int value)
-{
-	unsigned long timeout;
-	ktime_t wait;
-	int t;
-
-	/* first busyloop to see if the bit changes right away */
-	t = 100;
-	while (t-- > 0) {
-		if (FLD_GET(readl_relaxed(reg), bitnum, bitnum) == value)
-			return value;
-	}
-
-	/* then loop for 500ms, sleeping for 1ms in between */
-	timeout = jiffies + msecs_to_jiffies(500);
-	while (time_before(jiffies, timeout)) {
-		if (FLD_GET(readl_relaxed(reg), bitnum, bitnum) == value)
-			return value;
-
-		wait = ns_to_ktime(1000 * 1000);
-		set_current_state(TASK_UNINTERRUPTIBLE);
-		schedule_hrtimeout(&wait, HRTIMER_MODE_REL);
 	}
 
 	return !value;
@@ -345,7 +317,7 @@ bool pll_calc(struct pll_data *pll, unsigned long clkout_min,
 
 	clkout_max = clkout_max ? clkout_max : ULONG_MAX;
 
-	for (regn = regn_stop; regn >= regn_start; --regn) {
+	for (regn = regn_start; regn <= regn_stop; ++regn) {
 		fint = clkin / regn;
 
 		regm_start = max(DIV_ROUND_UP(DIV_ROUND_UP(clkout_min, fint),
@@ -354,7 +326,7 @@ bool pll_calc(struct pll_data *pll, unsigned long clkout_min,
 				clkout_hw_max / fint / 2,
 				feats->regm_max);
 
-		for (regm = regm_stop; regm >= regm_start; --regm) {
+		for (regm = regm_start; regm <= regm_stop; ++regm) {
 			clkout = 2 * regm * fint;
 
 			if (func(regn, regm, fint, clkout, data))
@@ -365,20 +337,6 @@ bool pll_calc(struct pll_data *pll, unsigned long clkout_min,
 	return false;
 }
 
-static int dss_wait_hsdiv_ack(struct pll_data *pll, u32 hsdiv_ack_mask)
-{
-	int t = 100;
-
-	while (t-- > 0) {
-		u32 v = readl_relaxed(pll->base + PLL_STATUS);
-		v &= hsdiv_ack_mask;
-		if (v == hsdiv_ack_mask)
-			return 0;
-	}
-
-	return -ETIMEDOUT;
-}
-
 int pll_set_clock_div(struct pll_data *pll, struct pll_params *params)
 {
 	int i, r = 0, f = 0;
@@ -387,34 +345,30 @@ int pll_set_clock_div(struct pll_data *pll, struct pll_params *params)
 
 	pll->params = *params;
 
-	l = 0;
-	l = FLD_MOD(l, 1, 0, 0);		/* PLL_STOPMODE */
+	/* PLL_AUTOMODE = manual */
+	REG_FLD_MOD(pll->base, PLL_CONTROL, 0, 0, 0);
 
+	l = pll_read_reg(pll->base, PLL_CONFIGURATION1);
+	l = FLD_MOD(l, 1, 0, 0);		/* PLL_STOPMODE */
 	/* PLL_REGN */
 	l = FLD_MOD(l, params->regn - 1, feats->regn_start, feats->regn_end);
-
 	/* PLL_REGM */
 	l = FLD_MOD(l, params->regm, feats->regm_start, feats->regm_end);
 
-	/* M4 */
-	l = FLD_MOD(l, params->regm_hsdiv[0] ? params->regm_hsdiv[0] - 1 : 0,
-		    feats->regm_hsdiv_start[0], feats->regm_hsdiv_end[0]);
+	for (i = 0; i < 4; i++) {
+		if (params->hsdiv_enabled[i])
+			l = FLD_MOD(l, params->regm_hsdiv[i] > 0 ?
+				params->regm_hsdiv[i] - 1 : 0,
+				feats->regm_hsdiv_start[i],
+				feats->regm_hsdiv_end[i]);
+	}
 
-	/* M5 */
-	l = FLD_MOD(l, params->regm_hsdiv[1] ? params->regm_hsdiv[1] - 1 : 0,
-		    feats->regm_hsdiv_start[1], feats->regm_hsdiv_end[1]);
-	writel_relaxed(l, pll->base + PLL_CONFIGURATION1);
+	pll_write_reg(pll->base, PLL_CONFIGURATION1, l);
 
-	l = 0;
-	/* M6 */
-	l = FLD_MOD(l, params->regm_hsdiv[2] ? params->regm_hsdiv[2] - 1 : 0,
-		    feats->regm_hsdiv_start[2], feats->regm_hsdiv_end[2]);
-	/* M7 */
-	l = FLD_MOD(l, params->regm_hsdiv[3] ? params->regm_hsdiv[3] - 1 : 0,
-		    feats->regm_hsdiv_start[3], feats->regm_hsdiv_end[3]);
-	writel_relaxed(l, pll->base + PLL_CONFIGURATION3);
+	WARN_ON(params->fint < feats->fint_min ||
+		params->fint > feats->fint_max);
 
-	l = readl_relaxed(pll->base + PLL_CONFIGURATION2);
+	l = pll_read_reg(pll->base, PLL_CONFIGURATION2);
 
 	if (feats->freqsel) {
 		f = params->fint < 1000000 ? 0x3 :
@@ -424,51 +378,31 @@ int pll_set_clock_div(struct pll_data *pll, struct pll_params *params)
 			0x7;
 
 		l = FLD_MOD(l, f, 4, 1);	/* PLL_FREQSEL */
-	} else if (feats->selfreqdco) {
-		f = params->clkout < feats->clkout_max ? 0x2 : 0x4;
+	} else if (feats->selfreqdco && pll->type == DSS_PLL_TYPE_HDMI) {
+		f = params->clkout < feats->dco_range1_max &&
+			params->clkout < feats->dco_range2_min ? 0x2 : 0x4;
 
 		l = FLD_MOD(l, f, 3, 1);	/* PLL_SELFREQDCO */
 	}
-	l = FLD_MOD(l, 1, 13, 13);              /* PLL_REFEN */
-	l = FLD_MOD(l, 0, 14, 14);              /* PHY_CLKINEN */
-	l = FLD_MOD(l, 0, 16, 16);              /* M4_CLOCK_EN */
-	l = FLD_MOD(l, 0, 18, 18);              /* M5_CLOCK_EN */
-	l = FLD_MOD(l, 1, 20, 20);              /* HSDIVBYPASS */
+
+	l = FLD_MOD(l, 1, 13, 13);		/* PLL_REFEN */
+	l = FLD_MOD(l, 0, 14, 14);		/* CLKOUT_EN */
+	l = FLD_MOD(l, 1, 20, 20);		/* HSDIVBYPASS */
+
 	if (feats->refsel)
 		l = FLD_MOD(l, 3, 22, 21);	/* REF_SYSCLK = sysclk */
+	pll_write_reg(pll->base, PLL_CONFIGURATION2, l);
 
-	l = FLD_MOD(l, 0, 23, 23);              /* M6_CLOCK_EN */
-	l = FLD_MOD(l, 0, 25, 25);              /* M7_CLOCK_EN */
-	writel_relaxed(l, pll->base + PLL_CONFIGURATION2);
-
-	writel_relaxed(1, pll->base + PLL_GO);       /* PLL_GO */
-
-	if (wait_for_bit_change_sleep(pll->base + PLL_GO, 0, 0) != 0) {
-		DSSERR("DSS DPLL GO bit not going down.\n");
-		r = -EIO;
-		goto err;
+	l = pll_read_reg(pll->base, PLL_CONFIGURATION3);
+	for (i = 2; i <= 3; i++) {
+		if (params->hsdiv_enabled[i])
+			l = FLD_MOD(l, params->regm_hsdiv[i] > 0 ?
+				params->regm_hsdiv[i] - 1 : 0,
+				feats->regm_hsdiv_start[i],
+				feats->regm_hsdiv_end[i]);
 	}
-
-	if (wait_for_bit_change_sleep(pll->base + PLL_STATUS, 1, 1) != 1) {
-		DSSERR("cannot lock DSS DPLL\n");
-		r = -EIO;
-		goto err;
-	}
-
-	l = readl_relaxed(pll->base + PLL_CONFIGURATION2);
-	/* PHY_CLKINEN */
-	l = FLD_MOD(l, 1, 14, 14);
-	/* M4_CLOCK_EN */
-	l = FLD_MOD(l, params->hsdiv_enabled[0] ? 1 : 0, 16, 16);
-	/* M5_CLOCK_EN */
-	l = FLD_MOD(l, params->hsdiv_enabled[1] ? 1 : 0, 18, 18);
-	/* HSDIVBYPASS */
-	l = FLD_MOD(l, 0, 20, 20);
-	/* M6_CLOCK_EN */
-	l = FLD_MOD(l, params->hsdiv_enabled[2] ? 1 : 0, 23, 23);
-	/* M7_CLOCK_EN */
-	l = FLD_MOD(l, params->hsdiv_enabled[3] ? 1 : 0, 25, 25);
-	writel_relaxed(l, pll->base + PLL_CONFIGURATION2);
+	l = FLD_MOD(l, params->regsd, 17, 10);
+	pll_write_reg(pll->base, PLL_CONFIGURATION3, l);
 
 	if (pll->type == DSS_PLL_TYPE_HDMI) {
 		l = pll_read_reg(pll->base, PLL_CONFIGURATION4);
@@ -477,19 +411,47 @@ int pll_set_clock_div(struct pll_data *pll, struct pll_params *params)
 		pll_write_reg(pll->base, PLL_CONFIGURATION4, l);
 	}
 
-	r = dss_wait_hsdiv_ack(pll,
-		(params->regm_hsdiv[0] ? BIT(7) : 0) |
-		(params->regm_hsdiv[1] ? BIT(8) : 0) |
-		(params->regm_hsdiv[2] ? BIT(10) : 0) |
-		(params->regm_hsdiv[3] ? BIT(11) : 0));
-	if (r) {
-		DSSERR("failed to enable HSDIV clocks\n");
+	REG_FLD_MOD(pll->base, PLL_GO, 1, 0, 0);	/* DSI_PLL_GO */
+
+	if (wait_for_bit_change(pll->base, PLL_GO, 0, 0) != 0) {
+		DSSERR("dsi pll go bit not going down.\n");
+		r = -EIO;
 		goto err;
 	}
 
+	if (wait_for_bit_change(pll->base, PLL_STATUS, 1, 1) != 1) {
+		DSSERR("cannot lock PLL\n");
+		r = -EIO;
+		goto err;
+	}
+
+	pll->locked = 1;
+
+	l = pll_read_reg(pll->base, PLL_CONFIGURATION2);
+	l = FLD_MOD(l, 0, 0, 0);	/* PLL_IDLE */
+	l = FLD_MOD(l, 0, 5, 5);	/* PLL_PLLLPMODE */
+	l = FLD_MOD(l, 0, 6, 6);	/* PLL_LOWCURRSTBY */
+	l = FLD_MOD(l, 0, 7, 7);	/* PLL_TIGHTPHASELOCK */
+	l = FLD_MOD(l, 0, 8, 8);	/* PLL_DRIFTGUARDEN */
+	l = FLD_MOD(l, 0, 10, 9);	/* PLL_LOCKSEL */
+	l = FLD_MOD(l, 1, 13, 13);	/* PLL_REFEN */
+	l = FLD_MOD(l, 1, 14, 14);	/* PHY_CLKINEN */
+	l = FLD_MOD(l, 0, 15, 15);	/* BYPASSEN */
+	/* HSDIV1_CLOCK_EN */
+	l = FLD_MOD(l, params->hsdiv_enabled[0], 16, 16);
+	l = FLD_MOD(l, 0, 17, 17);	/* DSS_CLOCK_PWDN */
+	/* HSDIV2_CLOCK_EN */
+	l = FLD_MOD(l, params->hsdiv_enabled[1], 18, 18);
+	l = FLD_MOD(l, 0, 19, 19);	/* PROTO_CLOCK_PWDN */
+	l = FLD_MOD(l, 0, 20, 20);	/* HSDIVBYPASS */
+	/* HSDIV3_CLOCK_EN */
+	l = FLD_MOD(l, params->hsdiv_enabled[2], 23, 23);
+	/* HSDIV4_CLOCK_EN */
+	l = FLD_MOD(l, params->hsdiv_enabled[3], 25, 25);
+	pll_write_reg(pll->base, PLL_CONFIGURATION2, l);
+
 err:
 	return r;
-
 }
 
 static struct pll_features omap34xx_pll_features = {
@@ -560,9 +522,9 @@ static struct pll_features omap54xx_pll_features = {
 	.regn_max = (1 << 8) - 1,
 	.regm_max = (1 << 12) - 1,
 	.regm_hsdiv_max = (1 << 5) - 1,
-	.fint_min = 500000,
-	.fint_max = 2500000,
-	.clkout_max = 1800000000,
+	.fint_min = 150000,
+	.fint_max = 52000000,
+	.clkout_max = 2500000000UL,
 	.dco_range1_min = 750000000UL,
 	.dco_range1_max = 1500000000UL,
 	.dco_range2_min = 1250000000UL,
