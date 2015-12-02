@@ -1087,15 +1087,26 @@ static inline bool is_waiting(struct omap_gem_sync_waiter *waiter)
 
 static void sync_op_update(void)
 {
+	LIST_HEAD(call_list);
+
 	struct omap_gem_sync_waiter *waiter, *n;
 	list_for_each_entry_safe(waiter, n, &waiters, list) {
 		if (!is_waiting(waiter)) {
 			list_del(&waiter->list);
-			SYNC("notify: %p", waiter);
-			waiter->notify(waiter->arg);
-			kfree(waiter);
+			list_add(&waiter->list, &call_list);
 		}
 	}
+
+	spin_unlock(&sync_lock);
+
+	list_for_each_entry_safe(waiter, n, &call_list, list) {
+		SYNC("notify: %p", waiter);
+		list_del(&waiter->list);
+		waiter->notify(waiter->arg);
+		kfree(waiter);
+	}
+
+	spin_lock(&sync_lock);
 }
 
 static inline int sync_op(struct drm_gem_object *obj,
