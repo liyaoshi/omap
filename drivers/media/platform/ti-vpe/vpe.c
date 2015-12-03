@@ -2005,12 +2005,15 @@ static int vpe_dqbuf(struct file *file, void *priv, struct v4l2_buffer *buf)
 static int vpe_streamon(struct file *file, void *priv, enum v4l2_buf_type type)
 {
 	struct vpe_ctx *ctx = file2ctx(file);
+	int ret;
 
 	if (ctx->deinterlacing)
 		config_edi_input_mode(ctx, 0x0);
 
-	if (ctx->sequence != 0)
-		set_srcdst_params(ctx);
+	ret = set_srcdst_params(ctx);
+	if (ret)
+		return ret;
+
 	return v4l2_m2m_streamon(file, ctx->m2m_ctx, type);
 }
 
