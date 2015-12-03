@@ -1355,7 +1355,7 @@ void omap_gem_free_object(struct drm_gem_object *obj)
 
 	drm_gem_object_release(obj);
 
-	kfree(obj);
+	kfree(omap_obj);
 }
 
 /* convenience method to construct a GEM buffer object, and userspace handle */
@@ -1371,8 +1371,9 @@ int omap_gem_new_handle(struct drm_device *dev, struct drm_file *file,
 
 	ret = drm_gem_handle_create(file, obj, handle);
 	if (ret) {
+		struct omap_gem_object *omap_obj = to_omap_bo(obj);
 		drm_gem_object_release(obj);
-		kfree(obj); /* TODO isn't there a dtor to call? just copying i915 */
+		kfree(omap_obj); /* TODO isn't there a dtor to call? just copying i915 */
 		return ret;
 	}
 
