@@ -1205,18 +1205,9 @@ int omap_gem_op_sync(struct drm_gem_object *obj, enum omap_gem_op op)
 			SYNC("waited: %p", waiter);
 			list_add_tail(&waiter->list, &waiters);
 			spin_unlock(&sync_lock);
-			ret = wait_event_interruptible(sync_event,
-					(waiter_task == NULL));
+			wait_event(sync_event, (waiter_task == NULL));
 			spin_lock(&sync_lock);
-			if (waiter_task) {
-				SYNC("interrupted: %p", waiter);
-				/* we were interrupted */
-				list_del(&waiter->list);
-				waiter_task = NULL;
-			} else {
-				/* freed in sync_op_update() */
-				waiter = NULL;
-			}
+			waiter = NULL;
 		}
 		spin_unlock(&sync_lock);
 
