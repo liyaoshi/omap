@@ -124,6 +124,24 @@ static const struct tlc_board_data tlc_10_inch_data = {
 	.init_seq_len = ARRAY_SIZE(tlc_10_inch_init_seq),
 };
 
+static const struct of_device_id tlc59108_of_match[] = {
+	{
+		.compatible = "omapdss,ti,tlc59108-tfcs9700",
+		.data = &tlc_7_inch_data,
+	},
+	{
+		.compatible = "omapdss,ti,tlc59108-lp101",
+		.data = &tlc_10_inch_data,
+	},
+	{
+		.compatible = "omapdss,ti,tlc59108-fpddisp",
+		.data = &tlc_10_inch_data,
+	},
+	{ }
+};
+
+MODULE_DEVICE_TABLE(of, tlc59108_of_match);
+
 static int tlc_init(struct panel_drv_data *ddata)
 {
 	struct regmap *map = ddata->regmap;
@@ -187,6 +205,7 @@ static int panel_dpi_enable(struct omap_dss_device *dssdev)
 	struct panel_drv_data *ddata = to_panel_data(dssdev);
 	struct omap_dss_device *in = ddata->in;
 	int r;
+	const struct of_device_id *of_dev_id;
 
 	if (!omapdss_device_is_connected(dssdev))
 		return -ENODEV;
@@ -200,7 +219,10 @@ static int panel_dpi_enable(struct omap_dss_device *dssdev)
 	if (r)
 		return r;
 
-	tlc_init(ddata);
+	of_dev_id = of_match_device(tlc59108_of_match, dssdev->dev);
+	if (!strcmp(of_dev_id->compatible, "omapdss,ti,tlc59108-lp101") ||
+		!strcmp(of_dev_id->compatible, "omapdss,ti,tlc59108-tfcs9700"))
+		tlc_init(ddata);
 
 	dssdev->state = OMAP_DSS_DISPLAY_ACTIVE;
 
@@ -267,19 +289,6 @@ static struct omap_dss_driver panel_dpi_ops = {
 
 	.get_resolution	= omapdss_default_get_resolution,
 };
-
-static const struct of_device_id tlc59108_of_match[] = {
-	{
-		.compatible = "omapdss,ti,tlc59108-tfcs9700",
-		.data = &tlc_7_inch_data,
-	},
-	{
-		.compatible = "omapdss,ti,tlc59108-lp101",
-		.data = &tlc_10_inch_data,
-	},
-	{ }
-};
-MODULE_DEVICE_TABLE(of, tlc59108_of_match);
 
 static int tlc_probe_of(struct device *dev)
 {
@@ -355,13 +364,6 @@ static int tlc59108_i2c_probe(struct i2c_client *client,
 
 	usleep_range(10000, 15000);
 
-	/* Try to read a TLC register to verify if i2c works */
-	r = regmap_read(ddata->regmap, TLC59108_MODE1, &val);
-	if (r < 0) {
-		dev_err(dev, "Failed to set MODE1: %d\n", r);
-		goto err_read;
-	}
-
 	dssdev = &ddata->dssdev;
 	dssdev->dev = dev;
 	dssdev->driver = &panel_dpi_ops;
@@ -379,7 +381,6 @@ static int tlc59108_i2c_probe(struct i2c_client *client,
 
 	return 0;
 err_reg:
-err_read:
 err_gpio:
 	omap_dss_put_device(ddata->in);
 	return r;

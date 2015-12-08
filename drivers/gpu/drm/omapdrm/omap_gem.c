@@ -1087,15 +1087,26 @@ static inline bool is_waiting(struct omap_gem_sync_waiter *waiter)
 
 static void sync_op_update(void)
 {
+	LIST_HEAD(call_list);
+
 	struct omap_gem_sync_waiter *waiter, *n;
 	list_for_each_entry_safe(waiter, n, &waiters, list) {
 		if (!is_waiting(waiter)) {
 			list_del(&waiter->list);
-			SYNC("notify: %p", waiter);
-			waiter->notify(waiter->arg);
-			kfree(waiter);
+			list_add(&waiter->list, &call_list);
 		}
 	}
+
+	spin_unlock(&sync_lock);
+
+	list_for_each_entry_safe(waiter, n, &call_list, list) {
+		SYNC("notify: %p", waiter);
+		list_del(&waiter->list);
+		waiter->notify(waiter->arg);
+		kfree(waiter);
+	}
+
+	spin_lock(&sync_lock);
 }
 
 static inline int sync_op(struct drm_gem_object *obj,
@@ -1194,18 +1205,9 @@ int omap_gem_op_sync(struct drm_gem_object *obj, enum omap_gem_op op)
 			SYNC("waited: %p", waiter);
 			list_add_tail(&waiter->list, &waiters);
 			spin_unlock(&sync_lock);
-			ret = wait_event_interruptible(sync_event,
-					(waiter_task == NULL));
+			wait_event(sync_event, (waiter_task == NULL));
 			spin_lock(&sync_lock);
-			if (waiter_task) {
-				SYNC("interrupted: %p", waiter);
-				/* we were interrupted */
-				list_del(&waiter->list);
-				waiter_task = NULL;
-			} else {
-				/* freed in sync_op_update() */
-				waiter = NULL;
-			}
+			waiter = NULL;
 		}
 		spin_unlock(&sync_lock);
 
@@ -1344,7 +1346,7 @@ void omap_gem_free_object(struct drm_gem_object *obj)
 
 	drm_gem_object_release(obj);
 
-	kfree(obj);
+	kfree(omap_obj);
 }
 
 /* convenience method to construct a GEM buffer object, and userspace handle */
@@ -1360,8 +1362,9 @@ int omap_gem_new_handle(struct drm_device *dev, struct drm_file *file,
 
 	ret = drm_gem_handle_create(file, obj, handle);
 	if (ret) {
+		struct omap_gem_object *omap_obj = to_omap_bo(obj);
 		drm_gem_object_release(obj);
-		kfree(obj); /* TODO isn't there a dtor to call? just copying i915 */
+		kfree(omap_obj); /* TODO isn't there a dtor to call? just copying i915 */
 		return ret;
 	}
 
