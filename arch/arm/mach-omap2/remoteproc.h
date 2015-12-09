@@ -24,6 +24,8 @@ struct omap_dm_timer;
 #if IS_ENABLED(CONFIG_OMAP_REMOTEPROC)
 void dra7_ctrl_write_dsp1_boot_addr(u32 bootaddr);
 void dra7_ctrl_write_dsp2_boot_addr(u32 bootaddr);
+void dra7_dsp1_pre_shutdown(void);
+void dra7_dsp2_pre_shutdown(void);
 int omap_rproc_device_enable(struct platform_device *pdev);
 int omap_rproc_device_shutdown(struct platform_device *pdev);
 struct omap_dm_timer *omap_rproc_request_timer(struct device_node *np);
@@ -35,6 +37,8 @@ void omap_rproc_ack_timer_irq(struct omap_dm_timer *timer);
 #else
 static inline void dra7_ctrl_write_dsp1_boot_addr(u32 bootaddr) { }
 static inline void dra7_ctrl_write_dsp2_boot_addr(u32 bootaddr) { }
+static inline void dra7_dsp1_pre_shutdown(void) { }
+static inline void dra7_dsp2_pre_shutdown(void) { }
 static inline int omap_rproc_device_enable(struct platform_device *pdev)
 {
 	return 0;
