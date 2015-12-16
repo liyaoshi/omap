@@ -125,7 +125,7 @@ struct ti_qspi {
 
 #define MM_SWITCH      0x01
 #define MEM_CS         0x100
-#define MEM_CS_DIS     0xfffff0ff
+#define MEM_CS_DIS     0xfffff8ff
 
 #define QSPI_SETUP0_RD_NORMAL   (0x0 << 12)
 #define QSPI_SETUP0_RD_DUAL     (0x1 << 12)
@@ -162,7 +162,7 @@ void disable_qspi_memory_mapped(struct ti_qspi *qspi)
 	ti_qspi_write(qspi, ~MM_SWITCH, QSPI_SPI_SWITCH_REG);
 	if (qspi->ctrl_mod) {
 		val = readl(qspi->ctrl_base);
-		val |= MEM_CS_DIS;
+		val &= MEM_CS_DIS;
 		writel(val, qspi->ctrl_base);
 	}
 }
