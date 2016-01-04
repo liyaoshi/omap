@@ -1009,6 +1009,8 @@ static void csi2_phy_config(struct cal_ctx *ctx)
 	ctx_dbg(1, ctx, "ths_settle: %d (0x%02x)\n", ths_settle, ths_settle);
 	}
 #endif
+	/* Perform a dummy read to give time for PHY reset */
+	reg0 = cc_read(ctx->cc, CAL_CSI2_PHY_REG0);
 	reg0 = cc_read(ctx->cc, CAL_CSI2_PHY_REG0);
 	write_field(&reg0, CAL_CSI2_PHY_REG0_HSCLOCKCONFIG_DISABLE,
 		    CAL_CSI2_PHY_REG0_HSCLOCKCONFIG_MASK,
