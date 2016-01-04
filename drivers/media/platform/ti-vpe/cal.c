@@ -512,14 +512,14 @@ static void camerarx_phy_enable(struct cal_ctx *ctx)
 			    CM_CAMERRX_CTRL_CSI0_MODE_SHIFT);
 	} else if (ctx->csi2_port == 2) {
 		write_field(&val, 1, CM_CAMERRX_CTRL_CSI1_CTRLCLKEN_MASK,
-			    CM_CAMERRX_CTRL_CSI0_CTRLCLKEN_SHIFT);
+			    CM_CAMERRX_CTRL_CSI1_CTRLCLKEN_SHIFT);
 		write_field(&val, 0, CM_CAMERRX_CTRL_CSI1_CAMMODE_MASK,
-			    CM_CAMERRX_CTRL_CSI0_CAMMODE_SHIFT);
+			    CM_CAMERRX_CTRL_CSI1_CAMMODE_SHIFT);
 		/* enable all lanes by default */
 		write_field(&val, 0x3, CM_CAMERRX_CTRL_CSI1_LANEENABLE_MASK,
-			    CM_CAMERRX_CTRL_CSI0_LANEENABLE_SHIFT);
+			    CM_CAMERRX_CTRL_CSI1_LANEENABLE_SHIFT);
 		write_field(&val, 1, CM_CAMERRX_CTRL_CSI1_MODE_MASK,
-			    CM_CAMERRX_CTRL_CSI0_MODE_SHIFT);
+			    CM_CAMERRX_CTRL_CSI1_MODE_SHIFT);
 	}
 	cm_write(ctx->dev->cm, CM_CTRL_CORE_CAMERRX_CONTROL, val);
 }
@@ -638,7 +638,7 @@ static void cal_quickdump_regs(struct cal_dev *dev)
 	print_hex_dump(KERN_INFO, "", DUMP_PREFIX_OFFSET, 16, 4,
 		       dev->base, (dev->res->end - dev->res->start + 1), false);
 
-	if (!dev->ctx[0]) {
+	if (dev->ctx[0]) {
 		cal_info(dev, "CSI2 Core 0 Registers @ 0x%08x:\n",
 			 dev->ctx[0]->cc->res->start);
 		print_hex_dump(KERN_INFO, "", DUMP_PREFIX_OFFSET, 16, 4,
@@ -648,7 +648,7 @@ static void cal_quickdump_regs(struct cal_dev *dev)
 			       false);
 	}
 
-	if (!dev->ctx[1]) {
+	if (dev->ctx[1]) {
 		cal_info(dev, "CSI2 Core 1 Registers @ 0x%08x:\n",
 			 dev->ctx[1]->cc->res->start);
 		print_hex_dump(KERN_INFO, "", DUMP_PREFIX_OFFSET, 16, 4,
