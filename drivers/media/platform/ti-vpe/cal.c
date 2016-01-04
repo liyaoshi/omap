@@ -885,13 +885,15 @@ static void pix_proc_config(struct cal_ctx *ctx)
 #define bytes_per_line(pixel, bpp) (ALIGN(pixel*bpp, 16))
 
 static void cal_wr_dma_config(struct cal_ctx *ctx,
-			      unsigned int width)
+			      unsigned int width, unsigned int height)
 {
 	u32 val;
 
 	ctx_dbg(3, ctx, "%s\n", __func__);
 
 	val = cal_read(ctx->dev, CAL_WR_DMA_CTRL(ctx->csi2_port));
+	write_field(&val, height, CAL_WR_DMA_CTRL_YSIZE_MASK,
+		    CAL_WR_DMA_CTRL_YSIZE_SHIFT);
 	write_field(&val, ctx->csi2_port, CAL_WR_DMA_CTRL_CPORT_MASK,
 		    CAL_WR_DMA_CTRL_CPORT_SHIFT);
 	write_field(&val, CAL_WR_DMA_CTRL_DTAG_PIX_DAT,
@@ -1221,7 +1223,8 @@ static int cal_start_streaming(struct cal_ctx *ctx)
 	csi2_lane_config(ctx);
 	csi2_ctx_config(ctx);
 	pix_proc_config(ctx);
-	cal_wr_dma_config(ctx, ALIGN((ctx->width * ctx->pixelsize), 16));
+	cal_wr_dma_config(ctx, ALIGN((ctx->width * ctx->pixelsize), 16),
+				ctx->height);
 	cal_wr_dma_addr(ctx, addr);
 	csi2_ppi_enable(ctx);
 
