@@ -828,9 +828,12 @@ static void dwc3_ep0_complete_data(struct dwc3 *dwc,
 
 		dwc3_ep0_stall_and_restart(dwc);
 	} else {
+		int	is_short_pkt;
 		dwc3_gadget_giveback(ep0, r, 0);
 
-		if (IS_ALIGNED(ur->length, ep0->endpoint.maxpacket)) {
+		is_short_pkt = ur->actual < ur->length;
+		if (!is_short_pkt &&
+			IS_ALIGNED(ur->length, ep0->endpoint.maxpacket)) {
 			int ret;
 
 			dwc->ep0_next_event = DWC3_EP0_COMPLETE;
