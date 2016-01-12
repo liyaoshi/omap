@@ -350,6 +350,7 @@ struct cal_ctx {
 	struct v4l2_fh		fh;
 	struct cal_dev		*dev;
 	struct cc_data		*cc;
+	int			one_time_init;
 
 	/* v4l2_ioctl mutex */
 	struct mutex		mutex;
@@ -1219,16 +1220,19 @@ static int cal_start_streaming(struct cal_ctx *ctx)
 		return ret;
 
 	enable_irqs(ctx);
-	camerarx_phy_enable(ctx);
-	csi2_init(ctx);
-	csi2_phy_config(ctx);
-	csi2_lane_config(ctx);
-	csi2_ctx_config(ctx);
-	pix_proc_config(ctx);
-	cal_wr_dma_config(ctx, ALIGN((ctx->width * ctx->pixelsize), 16),
-				ctx->height);
-	cal_wr_dma_addr(ctx, addr);
+	if (ctx->one_time_init) {
+		camerarx_phy_enable(ctx);
+		csi2_init(ctx);
+		csi2_phy_config(ctx);
+		csi2_lane_config(ctx);
+		csi2_ctx_config(ctx);
+		pix_proc_config(ctx);
+		cal_wr_dma_config(ctx, ALIGN((ctx->width * ctx->pixelsize), 16),
+				  ctx->height);
+		ctx->one_time_init = 0;
+	}
 	csi2_ppi_enable(ctx);
+	cal_wr_dma_addr(ctx, addr);
 
 	if (ctx->sensor) {
 		if (v4l2_subdev_call(ctx->sensor, video, s_stream, 1)) {
@@ -2164,6 +2168,7 @@ static struct cal_ctx *cal_create_instance(struct cal_dev *dev, int inst)
 		return 0;
 	/* save the cal_dev * for future ref */
 	ctx->dev = dev;
+	ctx->one_time_init = 1;
 
 	snprintf(ctx->v4l2_dev.name, sizeof(ctx->v4l2_dev.name),
 		 "%s-%03d", CAL_MODULE_NAME, inst);
