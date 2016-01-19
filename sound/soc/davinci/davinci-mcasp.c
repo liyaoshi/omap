@@ -1673,25 +1673,33 @@ static int davinci_mcasp_probe(struct platform_device *pdev)
 
 	mcasp->dev = &pdev->dev;
 
-	irq = platform_get_irq_byname(pdev, "rx");
-	if (irq >= 0) {
-		ret = devm_request_threaded_irq(&pdev->dev, irq, NULL,
-				davinci_mcasp_rx_irq_handler,
-				IRQF_ONESHOT, dev_name(&pdev->dev), mcasp);
-		if (ret) {
-			dev_err(&pdev->dev, "RX IRQ request failed\n");
-			goto err;
+	/*
+	 * Do not register IRQ if DAI is shared, as the remote core will
+	 * be responsible for servicing these interrupts.
+	 */
+	if (!pdata->shared_dai) {
+		irq = platform_get_irq_byname(pdev, "rx");
+		if (irq >= 0) {
+			ret = devm_request_threaded_irq(&pdev->dev, irq, NULL,
+					davinci_mcasp_rx_irq_handler,
+					IRQF_ONESHOT, dev_name(&pdev->dev),
+					mcasp);
+			if (ret) {
+				dev_err(&pdev->dev, "RX IRQ request failed\n");
+				goto err;
+			}
 		}
-	}
 
-	irq = platform_get_irq_byname(pdev, "tx");
-	if (irq >= 0) {
-		ret = devm_request_threaded_irq(&pdev->dev, irq, NULL,
-				davinci_mcasp_tx_irq_handler,
-				IRQF_ONESHOT, dev_name(&pdev->dev), mcasp);
-		if (ret) {
-			dev_err(&pdev->dev, "TX IRQ request failed\n");
-			goto err;
+		irq = platform_get_irq_byname(pdev, "tx");
+		if (irq >= 0) {
+			ret = devm_request_threaded_irq(&pdev->dev, irq, NULL,
+					davinci_mcasp_tx_irq_handler,
+					IRQF_ONESHOT, dev_name(&pdev->dev),
+					mcasp);
+			if (ret) {
+				dev_err(&pdev->dev, "TX IRQ request failed\n");
+				goto err;
+			}
 		}
 	}
 
