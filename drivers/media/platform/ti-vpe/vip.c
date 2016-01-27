@@ -269,6 +269,7 @@ inline struct vip_port *notifier_to_vip_port(struct v4l2_async_notifier *n)
 static int alloc_port(struct vip_dev *, int);
 static void free_port(struct vip_port *);
 static int vip_setup_parser(struct vip_port *port);
+static void vip_enable_parser(struct vip_port *port);
 static void stop_dma(struct vip_stream *stream);
 
 static inline u32 read_sreg(struct vip_shared *shared, int offset)
@@ -1535,6 +1536,10 @@ static int vip_start_streaming(struct vb2_queue *vq, unsigned int count)
 
 	vip_dbg(2, dev, "start_streaming: start_dma buf 0x%x\n",
 		(unsigned int)buf);
+
+	stop_dma(stream);
+	clear_irqs(dev, dev->slice_id, stream->list_num);
+	vip_enable_parser(port);
 	start_dma(stream, buf);
 
 	/* We enable the irq after posting the vpdma descriptor
@@ -1565,8 +1570,8 @@ static int vip_stop_streaming(struct vb2_queue *vq)
 	}
 
 	disable_irqs(dev, dev->slice_id, stream->list_num);
-	clear_irqs(dev, dev->slice_id, stream->list_num);
 	stop_dma(stream);
+	clear_irqs(dev, dev->slice_id, stream->list_num);
 
 	/* release all active buffers */
 	while (!list_empty(&stream->post_bufs)) {
@@ -1761,8 +1766,7 @@ static int vip_setup_parser(struct vip_port *port)
 	usleep_range(200, 250);
 	write_vreg(port->dev, vip_parser_field(port, 0), 0x00000000);
 
-	write_vreg(port->dev, vip_parser_field(port, 0), VIP_PORT_ENABLE);
-	config0 = read_vreg(port->dev, vip_parser_field(port, 0));
+	config0 = 0;
 
 	if (endpoint->bus_type == V4L2_MBUS_BT656) {
 		flags = endpoint->bus.parallel.flags;
@@ -1839,11 +1843,23 @@ static int vip_setup_parser(struct vip_port *port)
 	}
 
 	config0 |= ((sync_type & VIP_SYNC_TYPE_MASK) << VIP_SYNC_TYPE_SHFT);
+
+	config0 |= (VIP_ASYNC_FIFO_RD | VIP_ASYNC_FIFO_WR);
 	write_vreg(port->dev, vip_parser_field(port, 0), config0);
 
 	vip_set_data_interface(port, iface);
 
 	return 0;
+}
+
+static void vip_enable_parser(struct vip_port *port)
+{
+	uint32_t config0;
+
+	config0 = read_vreg(port->dev, vip_parser_field(port, 0));
+	config0 |= VIP_PORT_ENABLE;
+	config0 &= ~(VIP_ASYNC_FIFO_RD | VIP_ASYNC_FIFO_WR);
+	write_vreg(port->dev, vip_parser_field(port, 0), config0);
 }
 
 static void vip_release_stream(struct vip_stream *stream)
