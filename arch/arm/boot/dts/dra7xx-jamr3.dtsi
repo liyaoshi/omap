@@ -41,6 +41,25 @@
 		compatible = "ti,dra7xx_radio";
 		gpios = <&gpio6 20 0>;
 	};
+
+	gatemp {
+		compatible = "hwspinlock-user";
+		hwlocks = <&hwspinlock 0>,
+			  <&hwspinlock 1>,
+			  <&hwspinlock 2>,
+			  <&hwspinlock 3>,
+			  <&hwspinlock 4>,
+			  <&hwspinlock 5>,
+			  <&hwspinlock 6>,
+			  <&hwspinlock 7>,
+			  <&hwspinlock 8>,
+			  <&hwspinlock 9>;
+	};
+
+	sr0 {
+		compatible = "generic-uio";
+		reg = <0xbfd00000 0x100000>;
+	};
 };
 
 &reserved_mem {

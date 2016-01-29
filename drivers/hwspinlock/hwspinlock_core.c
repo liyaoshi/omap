@@ -116,6 +116,8 @@ int __hwspin_trylock(struct hwspinlock *hwlock, int mode, unsigned long *flags)
 		ret = spin_trylock_irqsave(&hwlock->lock, *flags);
 	else if (mode == HWLOCK_IRQ)
 		ret = spin_trylock_irq(&hwlock->lock);
+	else if (mode == HWLOCK_MUTEX)
+		ret = mutex_trylock(&hwlock->mutex);
 	else
 		ret = spin_trylock(&hwlock->lock);
 
@@ -132,6 +134,8 @@ int __hwspin_trylock(struct hwspinlock *hwlock, int mode, unsigned long *flags)
 			spin_unlock_irqrestore(&hwlock->lock, *flags);
 		else if (mode == HWLOCK_IRQ)
 			spin_unlock_irq(&hwlock->lock);
+		else if (mode == HWLOCK_MUTEX)
+			mutex_unlock(&hwlock->mutex);
 		else
 			spin_unlock(&hwlock->lock);
 
@@ -259,6 +263,8 @@ void __hwspin_unlock(struct hwspinlock *hwlock, int mode, unsigned long *flags)
 		spin_unlock_irqrestore(&hwlock->lock, *flags);
 	else if (mode == HWLOCK_IRQ)
 		spin_unlock_irq(&hwlock->lock);
+	else if (mode == HWLOCK_MUTEX)
+		mutex_unlock(&hwlock->mutex);
 	else
 		spin_unlock(&hwlock->lock);
 }
@@ -565,6 +571,7 @@ int hwspin_lock_register(struct hwspinlock_device *bank, struct device *dev,
 		hwlock = &bank->lock[i];
 
 		spin_lock_init(&hwlock->lock);
+		mutex_init(&hwlock->mutex);
 		hwlock->bank = bank;
 		if (hwlock->type != HWSPINLOCK_RESERVED)
 			hwlock->type = HWSPINLOCK_UNUSED;
