@@ -1065,6 +1065,7 @@ native_irq_return_iret:
 	 * Other faults here are fatal.
 	 */
 	iretq
+	_ASM_EXTABLE(native_irq_return_iret, bad_iret)
 
 #ifdef CONFIG_X86_ESPFIX64
 native_irq_return_ldt:
