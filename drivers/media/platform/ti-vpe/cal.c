@@ -350,6 +350,7 @@ struct cal_ctx {
 	struct v4l2_fh		fh;
 	struct cal_dev		*dev;
 	struct cc_data		*cc;
+	int			one_time_init;
 
 	/* v4l2_ioctl mutex */
 	struct mutex		mutex;
@@ -512,14 +513,14 @@ static void camerarx_phy_enable(struct cal_ctx *ctx)
 			    CM_CAMERRX_CTRL_CSI0_MODE_SHIFT);
 	} else if (ctx->csi2_port == 2) {
 		write_field(&val, 1, CM_CAMERRX_CTRL_CSI1_CTRLCLKEN_MASK,
-			    CM_CAMERRX_CTRL_CSI0_CTRLCLKEN_SHIFT);
+			    CM_CAMERRX_CTRL_CSI1_CTRLCLKEN_SHIFT);
 		write_field(&val, 0, CM_CAMERRX_CTRL_CSI1_CAMMODE_MASK,
-			    CM_CAMERRX_CTRL_CSI0_CAMMODE_SHIFT);
+			    CM_CAMERRX_CTRL_CSI1_CAMMODE_SHIFT);
 		/* enable all lanes by default */
 		write_field(&val, 0x3, CM_CAMERRX_CTRL_CSI1_LANEENABLE_MASK,
-			    CM_CAMERRX_CTRL_CSI0_LANEENABLE_SHIFT);
+			    CM_CAMERRX_CTRL_CSI1_LANEENABLE_SHIFT);
 		write_field(&val, 1, CM_CAMERRX_CTRL_CSI1_MODE_MASK,
-			    CM_CAMERRX_CTRL_CSI0_MODE_SHIFT);
+			    CM_CAMERRX_CTRL_CSI1_MODE_SHIFT);
 	}
 	cm_write(ctx->dev->cm, CM_CTRL_CORE_CAMERRX_CONTROL, val);
 }
@@ -638,7 +639,7 @@ static void cal_quickdump_regs(struct cal_dev *dev)
 	print_hex_dump(KERN_INFO, "", DUMP_PREFIX_OFFSET, 16, 4,
 		       dev->base, (dev->res->end - dev->res->start + 1), false);
 
-	if (!dev->ctx[0]) {
+	if (dev->ctx[0]) {
 		cal_info(dev, "CSI2 Core 0 Registers @ 0x%08x:\n",
 			 dev->ctx[0]->cc->res->start);
 		print_hex_dump(KERN_INFO, "", DUMP_PREFIX_OFFSET, 16, 4,
@@ -648,7 +649,7 @@ static void cal_quickdump_regs(struct cal_dev *dev)
 			       false);
 	}
 
-	if (!dev->ctx[1]) {
+	if (dev->ctx[1]) {
 		cal_info(dev, "CSI2 Core 1 Registers @ 0x%08x:\n",
 			 dev->ctx[1]->cc->res->start);
 		print_hex_dump(KERN_INFO, "", DUMP_PREFIX_OFFSET, 16, 4,
@@ -885,13 +886,15 @@ static void pix_proc_config(struct cal_ctx *ctx)
 #define bytes_per_line(pixel, bpp) (ALIGN(pixel*bpp, 16))
 
 static void cal_wr_dma_config(struct cal_ctx *ctx,
-			      unsigned int width)
+			      unsigned int width, unsigned int height)
 {
 	u32 val;
 
 	ctx_dbg(3, ctx, "%s\n", __func__);
 
 	val = cal_read(ctx->dev, CAL_WR_DMA_CTRL(ctx->csi2_port));
+	write_field(&val, height, CAL_WR_DMA_CTRL_YSIZE_MASK,
+		    CAL_WR_DMA_CTRL_YSIZE_SHIFT);
 	write_field(&val, ctx->csi2_port, CAL_WR_DMA_CTRL_CPORT_MASK,
 		    CAL_WR_DMA_CTRL_CPORT_SHIFT);
 	write_field(&val, CAL_WR_DMA_CTRL_DTAG_PIX_DAT,
@@ -1007,6 +1010,8 @@ static void csi2_phy_config(struct cal_ctx *ctx)
 	ctx_dbg(1, ctx, "ths_settle: %d (0x%02x)\n", ths_settle, ths_settle);
 	}
 #endif
+	/* Perform a dummy read to give time for PHY reset */
+	reg0 = cc_read(ctx->cc, CAL_CSI2_PHY_REG0);
 	reg0 = cc_read(ctx->cc, CAL_CSI2_PHY_REG0);
 	write_field(&reg0, CAL_CSI2_PHY_REG0_HSCLOCKCONFIG_DISABLE,
 		    CAL_CSI2_PHY_REG0_HSCLOCKCONFIG_MASK,
@@ -1215,15 +1220,19 @@ static int cal_start_streaming(struct cal_ctx *ctx)
 		return ret;
 
 	enable_irqs(ctx);
-	camerarx_phy_enable(ctx);
-	csi2_init(ctx);
-	csi2_phy_config(ctx);
-	csi2_lane_config(ctx);
-	csi2_ctx_config(ctx);
-	pix_proc_config(ctx);
-	cal_wr_dma_config(ctx, ALIGN((ctx->width * ctx->pixelsize), 16));
-	cal_wr_dma_addr(ctx, addr);
+	if (ctx->one_time_init) {
+		camerarx_phy_enable(ctx);
+		csi2_init(ctx);
+		csi2_phy_config(ctx);
+		csi2_lane_config(ctx);
+		csi2_ctx_config(ctx);
+		pix_proc_config(ctx);
+		cal_wr_dma_config(ctx, ALIGN((ctx->width * ctx->pixelsize), 16),
+				  ctx->height);
+		ctx->one_time_init = 0;
+	}
 	csi2_ppi_enable(ctx);
+	cal_wr_dma_addr(ctx, addr);
 
 	if (ctx->sensor) {
 		if (v4l2_subdev_call(ctx->sensor, video, s_stream, 1)) {
@@ -2159,6 +2168,7 @@ static struct cal_ctx *cal_create_instance(struct cal_dev *dev, int inst)
 		return 0;
 	/* save the cal_dev * for future ref */
 	ctx->dev = dev;
+	ctx->one_time_init = 1;
 
 	snprintf(ctx->v4l2_dev.name, sizeof(ctx->v4l2_dev.name),
 		 "%s-%03d", CAL_MODULE_NAME, inst);
