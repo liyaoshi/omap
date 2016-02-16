@@ -32,76 +32,6 @@ i2cexp: &i2c5 {
  * So this can be accessed as 11-0058 and 11-0030 (11 is the remote bus)
  */
 
-&dra7_pmx_core {
-	/* vin5a pins are internally routed to vin1a  */
-	vin5a_pins: pinmux_vin5a_pins {
-		pinctrl-single,pins = <
-			0x374	(PIN_INPUT | MUX_MODE9)	/* vin1a_clk0	*/
-			0x39C	(PIN_INPUT | MUX_MODE9)	/* vin1a_hsync0	*/
-			0x3A0	(PIN_INPUT | MUX_MODE9)	/* vin1a_vsync0	*/
-			0x398	(PIN_INPUT | MUX_MODE9)	/* vin1a_d0	*/
-			0x394	(PIN_INPUT | MUX_MODE9)	/* vin1a_d1	*/
-			0x390	(PIN_INPUT | MUX_MODE9)	/* vin1a_d2	*/
-			0x38C	(PIN_INPUT | MUX_MODE9)	/* vin1a_d3 	*/
-			0x388	(PIN_INPUT | MUX_MODE9)	/* vin1a_d4 	*/
-			0x384	(PIN_INPUT | MUX_MODE9)	/* vin1a_d5	*/
-			0x380	(PIN_INPUT | MUX_MODE9)	/* vin1a_d6	*/
-			0x37C	(PIN_INPUT | MUX_MODE9)	/* vin1a_d7	*/
-		>;
-	};
-
-	/* vin4b pins are internally routed to vin1b  */
-        vin4b_pins: pinmux_vin4b_pins {
-		pinctrl-single,pins = <
-			0x23C	(PIN_INPUT | MUX_MODE5)	/* vin1b_clk1	*/
-			0x060	(PIN_INPUT | MUX_MODE6)	/* vin1b_hsync1	*/
-			0x260	(PIN_INPUT | MUX_MODE5)	/* vin1b_vsync1	*/
-			0x240	(PIN_INPUT | MUX_MODE5)	/* vin1b_d0	*/
-			0x248	(PIN_INPUT | MUX_MODE5)	/* vin1b_d1	*/
-			0x24C	(PIN_INPUT | MUX_MODE5)	/* vin1b_d2	*/
-			0x250	(PIN_INPUT | MUX_MODE5)	/* vin1b_d3 	*/
-			0x254	(PIN_INPUT | MUX_MODE5)	/* vin1b_d4 	*/
-			0x268	(PIN_INPUT | MUX_MODE5)	/* vin1b_d5	*/
-			0x26C	(PIN_INPUT | MUX_MODE5)	/* vin1b_d6	*/
-			0x270	(PIN_INPUT | MUX_MODE5)	/* vin1b_d7	*/
-                >;
-        };
-
-	/* vin2a pins are connected to vin2a only */
-	vin2a_pins: pinmux_vin2a_pins {
-		pinctrl-single,pins = <
-			0x154	(PIN_INPUT | MUX_MODE0)	/* vin2a_clk0	*/
-			0x25c	(PIN_INPUT | MUX_MODE4)	/* vin2a_hsync0	*/
-			0x164	(PIN_INPUT | MUX_MODE0)	/* vin2a_vsync0	*/
-			0x168	(PIN_INPUT | MUX_MODE0)	/* vin2a_d0	*/
-			0x16c	(PIN_INPUT | MUX_MODE0)	/* vin2a_d1	*/
-			0x170	(PIN_INPUT | MUX_MODE0)	/* vin2a_d2	*/
-			0x174	(PIN_INPUT | MUX_MODE0)	/* vin2a_d3	*/
-			0x178	(PIN_INPUT | MUX_MODE0)	/* vin2a_d4	*/
-			0x17c	(PIN_INPUT | MUX_MODE0)	/* vin2a_d5	*/
-			0x180	(PIN_INPUT | MUX_MODE0)	/* vin2a_d6	*/
-			0x184	(PIN_INPUT | MUX_MODE0)	/* vin2a_d7	*/
-		>;
-	};
-
-	/* vin3b pins are internally routed to vin2b */
-	vin3b_pins: pinmux_vin3b_pins {
-		pinctrl-single,pins = <
-			0x15C	(PIN_INPUT | MUX_MODE2)	/* vin2b_clk1	*/
-			0x160	(PIN_INPUT | MUX_MODE3)	/* vin2b_hsync1	*/
-			0x378	(PIN_INPUT | MUX_MODE4)	/* vin2b_vsync1	*/
-			0x1C4	(PIN_INPUT | MUX_MODE2)	/* vin2b_d0	*/
-			0x1C0	(PIN_INPUT | MUX_MODE2)	/* vin2b_d1	*/
-			0x1BC	(PIN_INPUT | MUX_MODE2)	/* vin2b_d2	*/
-			0x1B8	(PIN_INPUT | MUX_MODE2)	/* vin2b_d3 	*/
-			0x1B4	(PIN_INPUT | MUX_MODE2)	/* vin2b_d4 	*/
-			0x1B0	(PIN_INPUT | MUX_MODE2)	/* vin2b_d5	*/
-			0x1AC	(PIN_INPUT | MUX_MODE2)	/* vin2b_d6	*/
-			0x1A8	(PIN_INPUT | MUX_MODE2)	/* vin2b_d7	*/
-                >;
-	};
-};
-
 &dra72_vip_mux {
 
 	pinctrl-names = "default";
@@ -122,8 +52,6 @@ i2cexp: &i2c5 {
 
 &vip1 {
 	status = "okay";
-	pinctrl-names = "default";
-	pinctrl-0 = <&vin5a_pins &vin4b_pins &vin2a_pins &vin3b_pins>;
 };
 
 &ovcam_fc {
