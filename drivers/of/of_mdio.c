@@ -14,6 +14,7 @@
 #include <linux/netdevice.h>
 #include <linux/err.h>
 #include <linux/phy.h>
+#include <linux/phy_fixed.h>
 #include <linux/of.h>
 #include <linux/of_irq.h>
 #include <linux/of_mdio.h>
@@ -228,10 +229,6 @@ EXPORT_SYMBOL(of_phy_connect);
  * @dev: pointer to net_device claiming the phy
  * @hndlr: Link state callback for the network device
  * @iface: PHY data interface type
- *
- * This function is a temporary stop-gap and will be removed soon.  It is
- * only to support the fs_enet, ucc_geth and gianfar Ethernet drivers.  Do
- * not call this function from new drivers.
  */
 struct phy_device *of_phy_connect_fixed_link(struct net_device *dev,
 					     void (*hndlr)(struct net_device *),
@@ -280,3 +277,34 @@ struct phy_device *of_phy_attach(struct net_device *dev,
 	return phy_attach_direct(dev, phy, flags, iface) ? NULL : phy;
 }
 EXPORT_SYMBOL(of_phy_attach);
+
+#if defined(CONFIG_FIXED_PHY)
+/**
+ * of_phy_register_fixed_link - Parse fixed-link property and register a dummy phy
+ * @np: pointer to the OF device node that contains the "fixed-link"
+ * property for which a dummy phy should be registered.
+ */
+#define FIXED_LINK_PROPERTIES_COUNT 5
+int of_phy_register_fixed_link(struct device_node *np)
+{
+	struct fixed_phy_status status = {};
+	u32 fixed_link_props[FIXED_LINK_PROPERTIES_COUNT];
+	int ret;
+
+	ret = of_property_read_u32_array(np, "fixed-link",
+			fixed_link_props,
+			FIXED_LINK_PROPERTIES_COUNT);
+	if (ret < 0)
+		return ret;
+
+	status.link       = 1;
+	status.duplex     = fixed_link_props[1];
+	status.speed      = fixed_link_props[2];
+	status.pause      = fixed_link_props[3];
+	status.asym_pause = fixed_link_props[4];
+
+	return fixed_phy_add(PHY_POLL, fixed_link_props[0],
+				 &status);
+}
+EXPORT_SYMBOL(of_phy_register_fixed_link);
+#endif
