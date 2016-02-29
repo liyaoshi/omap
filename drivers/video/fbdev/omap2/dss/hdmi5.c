@@ -109,8 +109,14 @@ static irqreturn_t hdmi_irq_handler(int irq, void *data)
 
 	} else if (irqstatus & HDMI_IRQ_LINK_CONNECT) {
 		hdmi_wp_set_phy_pwr(wp, HDMI_PHYPWRCMD_TXON);
+
+		if (hdmi.hpd_cb_func)
+			hdmi.hpd_cb_func(irq, hdmi.hpd_cb_data);
 	} else if (irqstatus & HDMI_IRQ_LINK_DISCONNECT) {
 		hdmi_wp_set_phy_pwr(wp, HDMI_PHYPWRCMD_LDOON);
+
+		if (hdmi.hpd_cb_func)
+			hdmi.hpd_cb_func(irq, hdmi.hpd_cb_data);
 	}
 
 	return IRQ_HANDLED;
@@ -545,6 +551,17 @@ static int hdmi_set_hdmi_mode(struct omap_dss_device *dssdev,
 	return 0;
 }
 
+static int hdmi_register_hpd_callback(struct omap_dss_device *dssdev,
+				dss_hdmi_hpd_cb func,
+				void *data)
+
+{
+	hdmi.hpd_cb_func = func;
+	hdmi.hpd_cb_data = data;
+
+	return 0;
+}
+
 static const struct omapdss_hdmi_ops hdmi_ops = {
 	.connect		= hdmi_connect,
 	.disconnect		= hdmi_disconnect,
@@ -559,6 +576,7 @@ static const struct omapdss_hdmi_ops hdmi_ops = {
 	.read_edid		= hdmi_read_edid,
 	.set_infoframe		= hdmi_set_infoframe,
 	.set_hdmi_mode		= hdmi_set_hdmi_mode,
+	.register_hpd_callback  = hdmi_register_hpd_callback
 };
 
 static void hdmi_init_output(struct platform_device *pdev)
@@ -747,6 +765,8 @@ static int omapdss_hdmihw_probe(struct platform_device *pdev)
 		DSSERR("HDMI IRQ request failed\n");
 		return r;
 	}
+
+	hdmi.hpd_cb_func = NULL;
 
 	pm_runtime_enable(&pdev->dev);
 

@@ -336,6 +336,8 @@ struct omap_dss_board_info {
 	enum omapdss_version version;
 };
 
+typedef irqreturn_t (*dss_hdmi_hpd_cb)(int irq,  void *data);
+
 /* Init with the board info */
 extern int omap_display_init(struct omap_dss_board_info *board_data);
 /* HDMI mux init*/
@@ -636,6 +638,9 @@ struct omapdss_hdmi_ops {
 	int (*set_hdmi_mode)(struct omap_dss_device *dssdev, bool hdmi_mode);
 	int (*set_infoframe)(struct omap_dss_device *dssdev,
 		const struct hdmi_avi_infoframe *avi);
+	int (*register_hpd_callback)(struct omap_dss_device *dssdev,
+					dss_hdmi_hpd_cb func,
+					void *data);
 };
 
 struct omapdss_dsi_ops {
@@ -849,6 +854,9 @@ struct omap_dss_driver {
 	int (*set_hdmi_mode)(struct omap_dss_device *dssdev, bool hdmi_mode);
 	int (*set_hdmi_infoframe)(struct omap_dss_device *dssdev,
 		const struct hdmi_avi_infoframe *avi);
+	int (*register_hpd_callback)(struct omap_dss_device *dssdev,
+					dss_hdmi_hpd_cb func,
+					void *data);
 };
 
 enum omapdss_version omapdss_get_version(void);

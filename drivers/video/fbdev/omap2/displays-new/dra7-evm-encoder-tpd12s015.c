@@ -48,6 +48,7 @@ struct panel_drv_data {
 	struct pinctrl_state *pin_state_ddc;
 
 	struct i2c_adapter *ddc_i2c_adapter;
+	dss_hdmi_hpd_cb hpd_func;
 };
 
 static struct platform_device *mcasp;
@@ -291,6 +292,17 @@ static int tpd_set_hdmi_mode(struct omap_dss_device *dssdev,
 	return in->ops.hdmi->set_hdmi_mode(in, hdmi_mode);
 }
 
+static int tpd_register_hpd_callback(struct omap_dss_device *dssdev,
+					dss_hdmi_hpd_cb func,
+					void *data)
+{
+	struct panel_drv_data *ddata = to_panel_data(dssdev);
+	struct omap_dss_device *in = ddata->in;
+
+	if (in->ops.hdmi->register_hpd_callback)
+		return in->ops.hdmi->register_hpd_callback(dssdev, func, data);
+}
+
 static const struct omapdss_hdmi_ops tpd_hdmi_ops = {
 	.connect		= tpd_connect,
 	.disconnect		= tpd_disconnect,
@@ -306,6 +318,7 @@ static const struct omapdss_hdmi_ops tpd_hdmi_ops = {
 	.detect			= tpd_detect,
 	.set_infoframe		= tpd_set_infoframe,
 	.set_hdmi_mode		= tpd_set_hdmi_mode,
+	.register_hpd_callback	= tpd_register_hpd_callback
 };
 
 static int tpd_probe_of(struct platform_device *pdev)

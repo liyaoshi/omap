@@ -540,6 +540,7 @@ static struct omap_dss_driver tc358768_dpi_ops = {
 	.check_timings	= tc358768_check_timings,
 	.set_timings	= tc358768_set_timings,
 	.get_timings	= tc358768_get_timings,
+	.register_hpd_callback	= NULL,
 };
 
 static const struct of_device_id tc3587xxbg_of_match[] = {

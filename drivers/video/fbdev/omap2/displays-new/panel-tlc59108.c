@@ -283,8 +283,8 @@ static struct omap_dss_driver panel_dpi_ops = {
 	.set_timings	= panel_dpi_set_timings,
 	.get_timings	= panel_dpi_get_timings,
 	.check_timings	= panel_dpi_check_timings,
-
 	.get_resolution	= omapdss_default_get_resolution,
+	.register_hpd_callback	= NULL,
 };
 
 static int tlc_probe_of(struct device *dev)

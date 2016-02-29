@@ -327,6 +327,8 @@ struct omap_hdmi {
 
 	bool core_enabled;
 	bool display_enabled;
+	dss_hdmi_hpd_cb hpd_cb_func;
+	void *hpd_cb_data;
 
 	struct omap_dss_device output;
 
