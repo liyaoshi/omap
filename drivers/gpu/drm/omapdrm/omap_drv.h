@@ -151,6 +151,7 @@ int omap_gem_resume(struct device *dev);
 int omap_irq_enable_vblank(struct drm_device *dev, int crtc_id);
 void omap_irq_disable_vblank(struct drm_device *dev, int crtc_id);
 irqreturn_t omap_irq_handler(int irq, void *arg);
+irqreturn_t omap_hdmi_hpd_irq_handler(int irq, void *arg);
 void omap_irq_preinstall(struct drm_device *dev);
 int omap_irq_postinstall(struct drm_device *dev);
 void omap_irq_uninstall(struct drm_device *dev);
@@ -367,6 +368,7 @@ struct drm_gem_object *omap_gem_new_ext(struct drm_device *dev,
 
 void omap_gem_op_update(void);
 int omap_gem_set_sync_object(struct drm_gem_object *obj, void *syncobj);
+
 /*********************************/
 
 

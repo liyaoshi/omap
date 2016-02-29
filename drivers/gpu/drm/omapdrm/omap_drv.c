@@ -17,6 +17,7 @@
  * this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <linux/interrupt.h>
 #include "omap_drv.h"
 
 #include "drm_crtc_helper.h"
@@ -142,6 +143,7 @@ static int omap_connect_dssdevs(void)
 
 	for_each_dss_dev(dssdev) {
 		r = dssdev->driver->connect(dssdev);
+
 		if (r == -EPROBE_DEFER) {
 			omap_dss_put_device(dssdev);
 			goto cleanup;
@@ -900,6 +902,7 @@ static int pdev_probe(struct platform_device *device)
 
 	DBG("%s", device->name);
 	return drm_platform_init(&omap_drm_driver, device);
+
 }
 
 static int pdev_remove(struct platform_device *device)

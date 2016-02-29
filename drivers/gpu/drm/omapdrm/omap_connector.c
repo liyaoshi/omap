@@ -146,6 +146,9 @@ static enum drm_connector_status omap_connector_detect(
 	struct omap_dss_driver *dssdrv = dssdev->driver;
 	enum drm_connector_status ret;
 
+	if (force)
+		ret = connector_status_connected;
+
 	if (dssdrv->detect) {
 		if (dssdrv->detect(dssdev))
 			ret = connector_status_connected;
@@ -336,10 +339,20 @@ struct drm_connector *omap_connector_init(struct drm_device *dev,
 	omap_connector->encoder = encoder;
 
 	connector = &omap_connector->base;
+	connector->force = DRM_FORCE_ON;
 
 	drm_connector_init(dev, connector, &omap_connector_funcs,
 				connector_type);
 	drm_connector_helper_add(connector, &omap_connector_helper_funcs);
+
+	if (dssdev->driver->register_hpd_callback) {
+		dssdev->driver->register_hpd_callback(dssdev,
+							omap_hdmi_hpd_irq_handler,
+							dev);
+
+			DBG("Registered ISR omap_drm_hdmi_hpd_irq");
+	}
+
 
 #if 0 /* enable when dss2 supports hotplug */
 	if (dssdev->caps & OMAP_DSS_DISPLAY_CAP_HPD)
