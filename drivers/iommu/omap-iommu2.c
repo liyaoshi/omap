@@ -96,7 +96,7 @@ static int omap2_iommu_enable(struct omap_iommu *obj)
 	if (!obj->iopgd || !IS_ALIGNED((u32)obj->iopgd,  SZ_16K))
 		return -EINVAL;
 
-	pa = virt_to_phys(obj->iopgd);
+	pa = obj->iopgd_pa;
 	if (!IS_ALIGNED(pa, SZ_16K))
 		return -EINVAL;
 
