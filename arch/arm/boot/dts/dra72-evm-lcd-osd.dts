@@ -9,3 +9,6 @@
 #include "dra72-evm.dts"
 #include "dra7x-evm-lcd-osd.dtsi"
 
+&ldc3001 {
+	status = "disabled";
+};
