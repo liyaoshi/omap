@@ -12,3 +12,8 @@
 &ldc3001 {
 	status = "disabled";
 };
+
+&touchscreen {
+	interrupt-parent = <&gpio1>;
+	interrupts = <15 IRQ_TYPE_EDGE_FALLING>;
+};

@@ -35,14 +35,11 @@
 		enable-gpios = <&pcf_lcd 13 GPIO_ACTIVE_LOW>;  /* P15, CON_LCD_PWR_DN */
 	};
 
-	edt-ft5506@38 {
+	touchscreen: edt-ft5506@38 {
 		status = "okay";
 		compatible = "edt,edt-ft5506", "edt,edt-ft5x06";
 
 		reg = <0x38>;
-
-		interrupt-parent = <&gpio1>;
-		interrupts = <2 IRQ_TYPE_EDGE_FALLING>;
 
 		/* GPIO line is inverted before going to touch panel */
 		enable-gpios = <&pcf_lcd_tc3587x 5 GPIO_ACTIVE_HIGH>;
