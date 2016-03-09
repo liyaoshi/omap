@@ -144,8 +144,31 @@ int omap_encoder_set_enabled(struct drm_encoder *encoder, bool enabled)
 	struct omap_encoder *omap_encoder = to_omap_encoder(encoder);
 	struct omap_dss_device *dssdev = omap_encoder->dssdev;
 	struct omap_dss_driver *dssdrv = dssdev->driver;
+	struct drm_device *dev = encoder->dev;
+	struct drm_connector *connector;
+	bool hdmi_mode;
+
+	hdmi_mode = false;
+	list_for_each_entry(connector, &dev->mode_config.connector_list, head) {
+		if (connector->encoder == encoder) {
+			hdmi_mode = omap_connector_get_hdmi_mode(connector);
+			break;
+		}
+	}
 
 	if (enabled) {
+		if (connector->force) {
+			/* This is needed when the connector is forced on.   */
+			/* The connector is configured with default modes    */
+			/* even if HDMI cable is not connected.  This        */
+			/* toggle sequence forces a probe of the monitor for */
+			/* valid modes before enablin the monitor            */
+			dssdrv->enable(dssdev);
+			connector->funcs->fill_modes(connector,
+			dev->mode_config.max_width,
+			dev->mode_config.max_height);
+			dssdrv->disable(dssdev);
+		}
 		return dssdrv->enable(dssdev);
 	} else {
 		dssdrv->disable(dssdev);
