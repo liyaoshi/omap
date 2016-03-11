@@ -47,12 +47,14 @@ struct omap_rproc_timer_ops {
  * @device_enable: omap-specific handler for enabling a device
  * @device_shutdown: omap-specific handler for shutting down a device
  * @set_bootaddr: omap-specific handler for setting the rproc boot address
+ * @pre_shutdown: omap-specific handler for performing pre-shutdown cleanup
  * @timer_ops: platform data ops for OMAP dmtimer handlers
  */
 struct omap_rproc_pdata {
 	int (*device_enable)(struct platform_device *pdev);
 	int (*device_shutdown)(struct platform_device *pdev);
 	void (*set_bootaddr)(u32);
+	void (*pre_shutdown)(void);
 
 	struct omap_rproc_timer_ops *timer_ops;
 };

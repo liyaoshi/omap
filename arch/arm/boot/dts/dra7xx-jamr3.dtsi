@@ -70,8 +70,8 @@
 		status = "okay";
 	};
 
-	dsp1_sr0: dsp1_sr0@bfd00000 {
-		reg = <0xbfd00000 0x100000>;
+	dsp1_sr0: dsp1_sr0@bfb00000 {
+		reg = <0xbfb00000 0x100000>;
 		no-map;
 		status = "okay";
 	};

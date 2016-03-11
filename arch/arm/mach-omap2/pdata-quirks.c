@@ -294,6 +294,7 @@ static struct omap_rproc_pdata dra7_dsp1_pdata = {
 	.device_shutdown = omap_rproc_device_shutdown,
 	.set_bootaddr = dra7_ctrl_write_dsp1_boot_addr,
 	.timer_ops = &omap_rproc_dmtimer_ops,
+	.pre_shutdown = dra7_dsp1_pre_shutdown,
 };
 
 static struct omap_rproc_pdata dra7_dsp2_pdata = {
@@ -301,6 +302,7 @@ static struct omap_rproc_pdata dra7_dsp2_pdata = {
 	.device_shutdown = omap_rproc_device_shutdown,
 	.set_bootaddr = dra7_ctrl_write_dsp2_boot_addr,
 	.timer_ops = &omap_rproc_dmtimer_ops,
+	.pre_shutdown = dra7_dsp2_pre_shutdown,
 };
 #endif
 
