@@ -58,7 +58,7 @@
 
 	sr0 {
 		compatible = "generic-uio";
-		reg = <0xbfd00000 0x100000>;
+		reg = <0xbfb00000 0x100000>;
 	};
 };
 
