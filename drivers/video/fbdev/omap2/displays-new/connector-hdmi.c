@@ -187,6 +187,17 @@ static int hdmic_set_infoframe(struct omap_dss_device *dssdev,
 	return in->ops.hdmi->set_infoframe(in, avi);
 }
 
+static int hdmic_register_hpd_callback(struct omap_dss_device *dssdev,
+					dss_hdmi_hpd_cb func,
+					void *data)
+{
+	struct panel_drv_data *ddata = to_panel_data(dssdev);
+	struct omap_dss_device *in = ddata->in;
+
+	if (in->ops.hdmi->register_hpd_callback)
+		return in->ops.hdmi->register_hpd_callback(in, func, data);
+}
+
 static struct omap_dss_driver hdmic_driver = {
 	.connect		= hdmic_connect,
 	.disconnect		= hdmic_disconnect,
@@ -204,6 +215,7 @@ static struct omap_dss_driver hdmic_driver = {
 	.detect			= hdmic_detect,
 	.set_hdmi_mode		= hdmic_set_hdmi_mode,
 	.set_hdmi_infoframe	= hdmic_set_infoframe,
+	.register_hpd_callback	= hdmic_register_hpd_callback,
 };
 
 static int hdmic_probe_pdata(struct platform_device *pdev)
