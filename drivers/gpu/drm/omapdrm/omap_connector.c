@@ -345,6 +345,8 @@ struct drm_connector *omap_connector_init(struct drm_device *dev,
 				connector_type);
 	drm_connector_helper_add(connector, &omap_connector_helper_funcs);
 
+/* Not required for Android since HPD notifications from the HDMI driver
+ * are sent using uevents
 	if (dssdev->driver->register_hpd_callback) {
 		dssdev->driver->register_hpd_callback(dssdev,
 							omap_hdmi_hpd_irq_handler,
@@ -352,6 +354,7 @@ struct drm_connector *omap_connector_init(struct drm_device *dev,
 
 			DBG("Registered ISR omap_drm_hdmi_hpd_irq");
 	}
+*/
 
 
 #if 0 /* enable when dss2 supports hotplug */
