@@ -66,7 +66,7 @@ static struct powerdomain custefuse_7xx_pwrdm = {
 	.name		  = "custefuse_pwrdm",
 	.prcm_offs	  = DRA7XX_PRM_CUSTEFUSE_INST,
 	.prcm_partition	  = DRA7XX_PRM_PARTITION,
-	.pwrsts		  = PWRSTS_OFF_ON,
+	.pwrsts		  = PWRSTS_ON,
 	.flags		  = PWRDM_HAS_LOWPOWERSTATECHANGE,
 };
 
@@ -299,7 +299,7 @@ static struct powerdomain emu_7xx_pwrdm = {
 	.name		  = "emu_pwrdm",
 	.prcm_offs	  = DRA7XX_PRM_EMU_INST,
 	.prcm_partition	  = DRA7XX_PRM_PARTITION,
-	.pwrsts		  = PWRSTS_OFF_ON,
+	.pwrsts		  = PWRSTS_ON,
 	.banks		  = 1,
 	.pwrsts_mem_ret	= {
 		[0] = PWRSTS_OFF,	/* emu_bank */
