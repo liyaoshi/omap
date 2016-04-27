@@ -1,7 +1,7 @@
 export ARCH=arm
  
 ./scripts/kconfig/merge_config.sh \
-arch/arm/configs/omap2plus_defconfig \
+arch/arm/configs/multi_v7_defconfig \
 ti_config_fragments/baseport.cfg \
 ti_config_fragments/audio_display.cfg \
 ti_config_fragments/ipc.cfg \
