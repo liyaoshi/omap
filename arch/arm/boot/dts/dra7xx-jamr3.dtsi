@@ -35,6 +35,50 @@
 			clocks = <&atl_clkin1_ck>;
 		};
 	};
+
+	gatemp {
+		compatible = "hwspinlock-user";
+		hwlocks = <&hwspinlock 0>,
+			  <&hwspinlock 1>,
+			  <&hwspinlock 2>,
+			  <&hwspinlock 3>,
+			  <&hwspinlock 4>,
+			  <&hwspinlock 5>,
+			  <&hwspinlock 6>,
+			  <&hwspinlock 7>,
+			  <&hwspinlock 8>,
+			  <&hwspinlock 9>;
+	};
+
+	sr0 {
+		compatible = "generic-uio";
+		reg = <0x0 0xbfb00000 0x0 0x100000>;
+	};
+};
+
+&reserved_mem {
+	/* Required by cmem driver used by radio */
+	cmem_radio: cmem@95400000 {
+		reg = <0x0 0x95400000 0x0 0x400000>;
+		no-map;
+		status = "okay";
+	};
+
+	dsp1_sr0: dsp1_sr0@bfb00000 {
+		reg = <0x0 0xbfb00000 0x0 0x100000>;
+		no-map;
+		status = "okay";
+	};
+};
+
+&gpio6 {
+	p20 {
+		/* Radio reset GPIO */
+		gpio-hog;
+		gpios = <1 GPIO_ACTIVE_LOW>;
+		output-low;
+		line-name = "radio_rst";
+	};
 };
 
 &atl {
@@ -42,6 +86,21 @@
 		bws = <DRA7_ATL_WS_MCASP2_FSX>;
 		aws = <DRA7_ATL_WS_MCASP6_FSX>;
 	};
+};
+
+&mcasp2 {
+	assigned-clocks = <&mcasp2_ahclkx_mux>;
+	assigned-clock-parents = <&atl_clkin2_ck>;
+
+	status = "okay";
+
+	op-mode = <0>;          /* MCASP_IIS_MODE */
+	tdm-slots = <2>;
+	/* 8 serializers */
+	serial-dir = <  /* 0: INACTIVE, 1: TX, 2: RX */
+		2 0 0 0 0 0 0 0
+	>;
+	shared-dai;
 };
 
 &mcasp6 {
@@ -60,6 +119,11 @@
 	tx-num-evt = <32>;
 	rx-num-evt = <32>;
 	shared-dai;
+};
+
+&i2c4 {
+	status = "okay";
+	clock-frequency = <400000>;
 };
 
 &i2c_p3_exp {
