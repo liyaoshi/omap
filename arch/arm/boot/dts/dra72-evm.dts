@@ -340,3 +340,5 @@
 		remote-endpoint = <&csi2_cam0>;
 	};
 };
+
+#include "dra7xx-jamr3.dtsi"

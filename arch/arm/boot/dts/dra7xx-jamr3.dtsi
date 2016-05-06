@@ -1,0 +1,113 @@
+/*
+ * Copyright (C) 2016 Texas Instruments Incorporated - http://www.ti.com/
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ */
+
+#include <dt-bindings/clk/ti-dra7-atl.h>
+
+/ {
+	jamr3_sound {
+		compatible = "simple-audio-card";
+		simple-audio-card,name = "DRA7xx-JAMR3";
+		simple-audio-card,widgets =
+			"Line", "Line Out",
+			"Line", "Line In";
+		simple-audio-card,routing =
+			"Line Out",		"LLOUT",
+			"Line Out",		"RLOUT",
+			"LINE1L",		"Line In",
+			"LINE1R",		"Line In";
+		simple-audio-card,format = "dsp_b";
+		simple-audio-card,bitclock-master = <&jamr3_sound_master>;
+		simple-audio-card,frame-master = <&jamr3_sound_master>;
+		simple-audio-card,bitclock-inversion;
+
+		jamr3_sound_master: simple-audio-card,cpu {
+			sound-dai = <&mcasp6>;
+			system-clock-frequency = <11289600>;
+		};
+
+		simple-audio-card,codec {
+			sound-dai = <&tlv320aic3106a>;
+			clocks = <&atl_clkin1_ck>;
+		};
+	};
+};
+
+&atl {
+	atl1 {
+		bws = <DRA7_ATL_WS_MCASP2_FSX>;
+		aws = <DRA7_ATL_WS_MCASP6_FSX>;
+	};
+};
+
+&mcasp6 {
+	#sound-dai-cells = <0>;
+	assigned-clocks = <&mcasp6_ahclkx_mux>;
+	assigned-clock-parents = <&atl_clkin1_ck>;
+
+	status = "okay";
+
+	op-mode = <0>;          /* MCASP_IIS_MODE */
+	tdm-slots = <2>;
+	/* 4 serializer */
+	serial-dir = <  /* 0: INACTIVE, 1: TX, 2: RX */
+		1 2 0 0
+	>;
+	tx-num-evt = <32>;
+	rx-num-evt = <32>;
+	shared-dai;
+};
+
+&i2c_p3_exp {
+	tlv320aic3106a: tlv320aic3106@18 {
+		#sound-dai-cells = <0>;
+		compatible = "ti,tlv320aic3106";
+		reg = <0x18>;
+		adc-settle-ms = <40>;
+		ai3x-micbias-vg = <1>;		/* 2.0V */
+		name-prefix = "J3A";
+		status = "okay";
+
+		/* Regulators */
+		AVDD-supply = <&evm_3v3_sw>;
+		IOVDD-supply = <&evm_3v3_sw>;
+		DRVDD-supply = <&evm_3v3_sw>;
+		DVDD-supply = <&aic_dvdd>;
+	};
+
+	tlv320aic3106b: tlv320aic3106@19 {
+		#sound-dai-cells = <0>;
+		compatible = "ti,tlv320aic3106";
+		reg = <0x19>;
+		adc-settle-ms = <40>;
+		ai3x-micbias-vg = <1>;		/* 2.0V */
+		name-prefix = "J3B";
+		status = "okay";
+
+		/* Regulators */
+		AVDD-supply = <&evm_3v3_sw>;
+		IOVDD-supply = <&evm_3v3_sw>;
+		DRVDD-supply = <&evm_3v3_sw>;
+		DVDD-supply = <&aic_dvdd>;
+	};
+
+	tlv320aic3106c: tlv320aic3106@1a {
+		#sound-dai-cells = <0>;
+		compatible = "ti,tlv320aic3106";
+		reg = <0x1a>;
+		adc-settle-ms = <40>;
+		ai3x-micbias-vg = <1>;		/* 2.0V */
+		name-prefix = "J3C";
+		status = "okay";
+
+		/* Regulators */
+		AVDD-supply = <&evm_3v3_sw>;
+		IOVDD-supply = <&evm_3v3_sw>;
+		DRVDD-supply = <&evm_3v3_sw>;
+		DVDD-supply = <&aic_dvdd>;
+	};
+};
