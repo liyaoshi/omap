@@ -16,6 +16,8 @@
 
 	aliases {
 		display0 = &hdmi0;
+		sound0 = &snd0;
+		sound1 = &hdmi;
 	};
 
 	evm_3v3_sw: fixedregulator-evm_3v3 {
@@ -95,7 +97,7 @@
 		};
 	};
 
-	sound0: sound@0 {
+	snd0: sound@0 {
 		compatible = "simple-audio-card";
 		simple-audio-card,name = "DRA7xx-EVM";
 		simple-audio-card,widgets =
