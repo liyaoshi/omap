@@ -199,23 +199,6 @@
 	};
 };
 
-&dra7_pmx_core {
-	mmc2_pins_default: mmc2_pins_default {
-		pinctrl-single,pins = <
-			0x9c (PIN_INPUT_PULLUP | MUX_MODE1) /* gpmc_a23.mmc2_clk */
-			0xb0 (PIN_INPUT_PULLUP | MUX_MODE1) /* gpmc_cs1.mmc2_cmd */
-			0xa0 (PIN_INPUT_PULLUP | MUX_MODE1) /* gpmc_a24.mmc2_dat0 */
-			0xa4 (PIN_INPUT_PULLUP | MUX_MODE1) /* gpmc_a25.mmc2_dat1 */
-			0xa8 (PIN_INPUT_PULLUP | MUX_MODE1) /* gpmc_a26.mmc2_dat2 */
-			0xac (PIN_INPUT_PULLUP | MUX_MODE1) /* gpmc_a27.mmc2_dat3 */
-			0x8c (PIN_INPUT_PULLUP | MUX_MODE1) /* gpmc_a19.mmc2_dat4 */
-			0x90 (PIN_INPUT_PULLUP | MUX_MODE1) /* gpmc_a20.mmc2_dat5 */
-			0x94 (PIN_INPUT_PULLUP | MUX_MODE1) /* gpmc_a21.mmc2_dat6 */
-			0x98 (PIN_INPUT_PULLUP | MUX_MODE1) /* gpmc_a22.mmc2_dat7 */
-		>;
-	};
-};
-
 &i2c1 {
 	status = "okay";
 	clock-frequency = <400000>;
@@ -432,8 +415,7 @@
 };
 
 &cpu0 {
-	cpu0-supply = <&smps12_reg>;
-	voltage-tolerance = <1>;
+	cpu-supply = <&smps12_reg>;
 };
 
 &uart3 {
@@ -555,6 +537,31 @@
        };
 };
 
+&cpu0 {
+	cpu0-opp-domain = <&oppdm_mpu>;
+	voltage-tolerance = <1>;
+};
+
+&oppdm_mpu {
+	vdd-supply = <&smps12_reg>;
+};
+
+&oppdm_dspeve {
+	vdd-supply = <&smps45_reg>;
+};
+
+&oppdm_gpu {
+	vdd-supply = <&smps45_reg>;
+};
+
+&oppdm_ivahd {
+	vdd-supply = <&smps45_reg>;
+};
+
+&oppdm_core {
+	vdd-supply = <&smps6_reg>;
+};
+
 &dss {
 	status = "ok";
 
@@ -586,6 +593,26 @@
 	>;
 	tx-num-evt = <32>;
 	rx-num-evt = <32>;
+};
+
+&mailbox3 {
+	status = "okay";
+	mbox_pru1_0: mbox_pru1_0 {
+		status = "okay";
+	};
+	mbox_pru1_1: mbox_pru1_1 {
+		status = "okay";
+	};
+};
+
+&mailbox4 {
+	status = "okay";
+	mbox_pru2_0: mbox_pru2_0 {
+		status = "okay";
+	};
+	mbox_pru2_1: mbox_pru2_1 {
+		status = "okay";
+	};
 };
 
 &mailbox5 {
@@ -660,3 +687,30 @@
 	mboxes = <&mailbox6 &mbox_dsp2_ipc3x>;
 	timers = <&timer6>;
 };
+
+&pruss1 {
+	status = "okay";
+	pru1_0: pru0@4b234000 {
+		mboxes = <&mailbox3 &mbox_pru1_0>;
+		status = "okay";
+	};
+
+	pru1_1: pru1@4b238000 {
+		mboxes = <&mailbox3 &mbox_pru1_1>;
+		status = "okay";
+	};
+};
+
+&pruss2 {
+	status = "okay";
+	pru2_0: pru0@4b2b4000 {
+		mboxes = <&mailbox4 &mbox_pru2_0>;
+		status = "okay";
+	};
+
+	pru2_1: pru1@4b2b8000 {
+		mboxes = <&mailbox4 &mbox_pru2_1>;
+		status = "okay";
+	};
+};
+
