@@ -22,6 +22,7 @@
 #include <linux/delay.h>
 #include <linux/pm_runtime.h>
 #include <linux/console.h>
+#include <linux/pinctrl/consumer.h>
 #include <linux/pm_qos.h>
 #include <linux/pm_wakeirq.h>
 #include <linux/dma-mapping.h>
@@ -763,6 +764,7 @@ static void omap_8250_rx_dma_flush(struct uart_8250_port *p)
 {
 	struct omap8250_priv	*priv = p->port.private_data;
 	struct uart_8250_dma	*dma = p->dma;
+	struct dma_tx_state     state;
 	unsigned long		flags;
 	int ret;
 
@@ -773,10 +775,12 @@ static void omap_8250_rx_dma_flush(struct uart_8250_port *p)
 		return;
 	}
 
-	ret = dmaengine_pause(dma->rxchan);
-	if (WARN_ON_ONCE(ret))
-		priv->rx_dma_broken = true;
-
+	ret = dmaengine_tx_status(dma->rxchan, dma->rx_cookie, &state);
+	if (ret == DMA_IN_PROGRESS) {
+		ret = dmaengine_pause(dma->rxchan);
+		if (WARN_ON_ONCE(ret))
+			priv->rx_dma_broken = true;
+	}
 	spin_unlock_irqrestore(&priv->rx_dma_lock, flags);
 
 	__dma_rx_do_complete(p, true);
@@ -1417,6 +1421,8 @@ static int omap8250_runtime_suspend(struct device *dev)
 	priv->latency = PM_QOS_CPU_DMA_LAT_DEFAULT_VALUE;
 	schedule_work(&priv->qos_work);
 
+	pinctrl_pm_select_sleep_state(dev);
+
 	return 0;
 }
 
@@ -1429,6 +1435,8 @@ static int omap8250_runtime_resume(struct device *dev)
 	/* In case runtime-pm tries this before we are setup */
 	if (!priv)
 		return 0;
+
+	pinctrl_pm_select_default_state(dev);
 
 	up = serial8250_get_port(priv->line);
 	loss_cntx = omap8250_lost_context(up);
