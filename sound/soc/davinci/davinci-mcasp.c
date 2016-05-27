@@ -1705,6 +1705,11 @@ static struct davinci_mcasp_pdata *davinci_mcasp_set_pdata_from_of(
 	if (ret >= 0)
 		pdata->sram_size_capture = val;
 
+	if (of_find_property(np, "shared-dai", NULL))
+		pdata->shared_dai = 1;
+	else
+		pdata->shared_dai = 0;
+
 	return  pdata;
 
 nodata:
@@ -1903,6 +1908,15 @@ static int davinci_mcasp_probe(struct platform_device *pdev)
 
 	pm_runtime_enable(&pdev->dev);
 
+	/*
+	 * Forbid runtime PM if the DAI is shared, data transfers will occur
+	 * from a different core (typically DSP).
+	 */
+	if (pdata->shared_dai) {
+		dev_info(&pdev->dev, "DAI is shared\n");
+		pm_runtime_forbid(&pdev->dev);
+	}
+
 	mcasp->op_mode = pdata->op_mode;
 	/* sanity check for tdm slots parameter */
 	if (mcasp->op_mode == DAVINCI_MCASP_IIS_MODE) {
@@ -1932,51 +1946,58 @@ static int davinci_mcasp_probe(struct platform_device *pdev)
 
 	mcasp->dev = &pdev->dev;
 
-	irq = platform_get_irq_byname(pdev, "common");
-	if (irq >= 0) {
-		irq_name = devm_kasprintf(&pdev->dev, GFP_KERNEL, "%s_common",
-					  dev_name(&pdev->dev));
-		ret = devm_request_threaded_irq(&pdev->dev, irq, NULL,
-						davinci_mcasp_common_irq_handler,
-						IRQF_ONESHOT | IRQF_SHARED,
-						irq_name, mcasp);
-		if (ret) {
-			dev_err(&pdev->dev, "common IRQ request failed\n");
-			goto err;
+	/*
+	 * Do not register IRQ if DAI is shared, as the remote core will
+	 * be responsible for servicing these interrupts.
+	 */
+	if (!pdata->shared_dai) {
+		irq = platform_get_irq_byname(pdev, "common");
+		if (irq >= 0) {
+			irq_name = devm_kasprintf(&pdev->dev, GFP_KERNEL,
+					"%s_common", dev_name(&pdev->dev));
+			ret = devm_request_threaded_irq(&pdev->dev, irq, NULL,
+					davinci_mcasp_common_irq_handler,
+					IRQF_ONESHOT | IRQF_SHARED,
+					irq_name, mcasp);
+			if (ret) {
+				dev_err(&pdev->dev,
+					"common IRQ request failed\n");
+				goto err;
+			}
+
+			mcasp->irq_request[SNDRV_PCM_STREAM_PLAYBACK] = XUNDRN;
+			mcasp->irq_request[SNDRV_PCM_STREAM_CAPTURE] = ROVRN;
 		}
 
-		mcasp->irq_request[SNDRV_PCM_STREAM_PLAYBACK] = XUNDRN;
-		mcasp->irq_request[SNDRV_PCM_STREAM_CAPTURE] = ROVRN;
-	}
-
-	irq = platform_get_irq_byname(pdev, "rx");
-	if (irq >= 0) {
-		irq_name = devm_kasprintf(&pdev->dev, GFP_KERNEL, "%s_rx",
-					  dev_name(&pdev->dev));
-		ret = devm_request_threaded_irq(&pdev->dev, irq, NULL,
+		irq = platform_get_irq_byname(pdev, "rx");
+		if (irq >= 0) {
+			irq_name = devm_kasprintf(&pdev->dev, GFP_KERNEL,
+						"%s_rx", dev_name(&pdev->dev));
+			ret = devm_request_threaded_irq(&pdev->dev, irq, NULL,
 						davinci_mcasp_rx_irq_handler,
 						IRQF_ONESHOT, irq_name, mcasp);
-		if (ret) {
-			dev_err(&pdev->dev, "RX IRQ request failed\n");
-			goto err;
+			if (ret) {
+				dev_err(&pdev->dev, "RX IRQ request failed\n");
+				goto err;
+			}
+
+			mcasp->irq_request[SNDRV_PCM_STREAM_CAPTURE] = ROVRN;
 		}
 
-		mcasp->irq_request[SNDRV_PCM_STREAM_CAPTURE] = ROVRN;
-	}
-
-	irq = platform_get_irq_byname(pdev, "tx");
-	if (irq >= 0) {
-		irq_name = devm_kasprintf(&pdev->dev, GFP_KERNEL, "%s_tx",
-					  dev_name(&pdev->dev));
-		ret = devm_request_threaded_irq(&pdev->dev, irq, NULL,
+		irq = platform_get_irq_byname(pdev, "tx");
+		if (irq >= 0) {
+			irq_name = devm_kasprintf(&pdev->dev, GFP_KERNEL,
+						"%s_tx", dev_name(&pdev->dev));
+			ret = devm_request_threaded_irq(&pdev->dev, irq, NULL,
 						davinci_mcasp_tx_irq_handler,
 						IRQF_ONESHOT, irq_name, mcasp);
-		if (ret) {
-			dev_err(&pdev->dev, "TX IRQ request failed\n");
-			goto err;
-		}
+			if (ret) {
+				dev_err(&pdev->dev, "TX IRQ request failed\n");
+				goto err;
+			}
 
-		mcasp->irq_request[SNDRV_PCM_STREAM_PLAYBACK] = XUNDRN;
+			mcasp->irq_request[SNDRV_PCM_STREAM_PLAYBACK] = XUNDRN;
+		}
 	}
 
 	dat = platform_get_resource_byname(pdev, IORESOURCE_MEM, "dat");
