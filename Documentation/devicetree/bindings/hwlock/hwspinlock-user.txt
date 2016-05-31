@@ -1,0 +1,20 @@
+Hardware spinlock user-space interface
+======================================
+
+A hwspinlock client that provides ioctls to lock and unlock the
+reserved hwlocks.
+
+Required properties:
+- compatible:		Should be "hwspinlock-user"
+- hwlocks:		An array of the phandle and hwlock number
+			specifier tuple
+
+Example:
+
+gatemp {
+	compatible = "hwspinlock-user";
+	hwlocks = <&hwspinlock 0>,
+		  <&hwspinlock 1>,
+		  <&hwspinlock 2>,
+		  <&hwspinlock 3>;
+};

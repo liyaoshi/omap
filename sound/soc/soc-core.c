@@ -1082,6 +1082,15 @@ static void soc_set_name_prefix(struct snd_soc_card *card,
 				struct snd_soc_component *component)
 {
 	int i;
+	int ret;
+
+	if (component->dev->of_node) {
+		ret = of_property_read_string(component->dev->of_node,
+					      "name-prefix",
+					      &component->name_prefix);
+		if (ret == 0)
+			return;
+	}
 
 	if (card->codec_conf == NULL)
 		return;

@@ -16,6 +16,8 @@
 
 	aliases {
 		display0 = &hdmi0;
+		sound0 = &snd0;
+		sound1 = &hdmi;
 	};
 
 	evm_3v3_sw: fixedregulator-evm_3v3 {
@@ -95,7 +97,7 @@
 		};
 	};
 
-	sound0: sound@0 {
+	snd0: sound@0 {
 		compatible = "simple-audio-card";
 		simple-audio-card,name = "DRA7xx-EVM";
 		simple-audio-card,widgets =
@@ -336,7 +338,7 @@
 	};
 };
 
-&i2c5 {
+i2c_p3_exp: &i2c5 {
 	status = "okay";
 	clock-frequency = <400000>;
 
@@ -631,9 +633,11 @@
 			  <&atl_gfclk_mux>,
 			  <&dpll_abe_ck>,
 			  <&dpll_abe_m2x2_ck>,
+			  <&atl_clkin1_ck>,
 			  <&atl_clkin2_ck>;
 	assigned-clock-parents = <&sys_clkin2>, <&dpll_abe_m2_ck>;
-	assigned-clock-rates = <0>, <0>, <180633600>, <361267200>, <5644800>;
+	assigned-clock-rates = <0>, <0>, <180633600>, <361267200>,
+			       <11289600>, <5644800>;
 
 	status = "okay";
 
