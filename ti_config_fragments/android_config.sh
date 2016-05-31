@@ -10,4 +10,5 @@ ti_config_fragments/multi_v7_prune.cfg \
 ti_config_fragments/dra7_only.cfg \
 android/configs/android-base.cfg \
 android/configs/android-recommended.cfg \
+ti_config_fragments/auto.cfg \
 ti_config_fragments/android_omap.cfg
