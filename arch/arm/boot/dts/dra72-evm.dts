@@ -9,6 +9,13 @@
 / {
 	model = "TI DRA722";
 
+	aliases {
+		display0 = &hdmi0;
+		display1 = &fpd_disp;
+		sound1 = &hdmi;
+		i2c7 = &disp_ser;
+	};
+
 	memory {
 		device_type = "memory";
 		reg = <0x0 0x80000000 0x0 0x40000000>; /* 1024 MB */
@@ -254,6 +261,57 @@
 		};
 	};
 
+	disp_ser: serializer@1b {
+		compatible = "ti,ds90uh925q";
+		reg = <0x1b>;
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+		ranges = <0x2c 0x2c>,
+			<0x1c 0x1c>;
+
+		disp_des: deserializer@2c {
+			compatible = "ti,ds90uh928q";
+			reg = <0x2c>;
+			slave-mode;
+		};
+
+		/* TLC chip for LCD panel power and backlight */
+		fpd_disp: tlc59108@1c {
+			status = "disabled";
+			reg = <0x1c>;
+			compatible = "ti,tlc59108-fpddisp";
+			enable-gpios = <&pcf_gpio_21 0 GPIO_ACTIVE_LOW>;
+			/* P0, SEL_GPMC_AD_VID_S0 */
+
+			port@lcd3 {
+					fpd_in: endpoint {
+					remote-endpoint = <&dpi_out3>;
+				};
+			};
+		};
+	};
+};
+
+&dss {
+	status = "okay";
+
+	vdda_video-supply = <&ldo5_reg>;
+
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+
+		port@lcd3 {
+			reg = <2>;
+
+			dpi_out3: endpoint {
+				remote-endpoint = <&fpd_in>;
+				data-lines = <24>;
+			};
+		};
+	};
 };
 
 &hdmi {
