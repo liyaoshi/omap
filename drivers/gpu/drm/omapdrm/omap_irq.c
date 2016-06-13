@@ -285,3 +285,27 @@ void omap_drm_irq_uninstall(struct drm_device *dev)
 
 	priv->dispc_ops->free_irq(dev);
 }
+
+irqreturn_t omap_hdmi_hpd_irq_handler(int irq, void *arg)
+{
+	struct drm_device *dev = (struct drm_device *)arg;
+	struct drm_connector *connector;
+	struct omap_drm_private *priv = dev->dev_private;
+	unsigned long flags = 0;
+
+	list_for_each_entry(connector, &dev->mode_config.connector_list, head) {
+	if ((connector->connector_type == DRM_MODE_CONNECTOR_HDMIA) ||
+		(connector->connector_type == DRM_MODE_CONNECTOR_HDMIB)) {
+		connector->status = connector_status_unknown;
+
+		if (priv->fbdev) {
+				spin_lock_irqsave(&list_lock, flags);
+				drm_kms_helper_poll_enable(dev);
+				connector->force = 0;
+				spin_unlock_irqrestore(&list_lock, flags);
+			}
+		}
+	}
+
+	return IRQ_HANDLED;
+}
