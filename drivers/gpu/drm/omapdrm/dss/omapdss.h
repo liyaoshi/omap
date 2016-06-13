@@ -234,6 +234,8 @@ enum omap_dss_dsi_trans_mode {
 	OMAP_DSS_DSI_BURST_MODE,
 };
 
+typedef irqreturn_t (*dss_hdmi_hpd_cb)(int irq,  void *data);
+
 struct omap_dss_dsi_videomode_timings {
 	unsigned long hsclk;
 
@@ -575,6 +577,9 @@ struct omapdss_hdmi_ops {
 	int (*set_hdmi_mode)(struct omap_dss_device *dssdev, bool hdmi_mode);
 	int (*set_infoframe)(struct omap_dss_device *dssdev,
 		const struct hdmi_avi_infoframe *avi);
+	int (*register_hpd_callback)(struct omap_dss_device *dssdev,
+				dss_hdmi_hpd_cb func,
+				void *data);
 };
 
 struct omapdss_dsi_ops {
@@ -781,6 +786,9 @@ struct omap_dss_driver {
 	int (*set_hdmi_mode)(struct omap_dss_device *dssdev, bool hdmi_mode);
 	int (*set_hdmi_infoframe)(struct omap_dss_device *dssdev,
 		const struct hdmi_avi_infoframe *avi);
+	int (*register_hpd_callback)(struct omap_dss_device *dssdev,
+				dss_hdmi_hpd_cb func,
+				void *data);
 };
 
 enum omapdss_version omapdss_get_version(void);
@@ -836,6 +844,7 @@ int omap_dispc_unregister_isr(omap_dispc_isr_t isr, void *arg, u32 mask);
 
 int omapdss_compat_init(void);
 void omapdss_compat_uninit(void);
+
 
 static inline bool omapdss_device_is_connected(struct omap_dss_device *dssdev)
 {
