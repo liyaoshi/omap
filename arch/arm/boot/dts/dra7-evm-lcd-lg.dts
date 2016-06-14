@@ -8,3 +8,9 @@
 
 #include "dra7-evm.dts"
 #include "dra7x-evm-lcd-lg.dtsi"
+
+&ldc3001 {
+	interrupt-parent = <&gpio1>;
+	interrupts = <2 IRQ_TYPE_LEVEL_HIGH>;
+};
+
