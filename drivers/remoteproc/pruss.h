@@ -67,7 +67,10 @@
 /* HIPIR register bit-fields */
 #define INTC_HIPIR_NONE_HINT	0x80000000
 
-/* PRU_ICSS_CFG registers */
+/*
+ * PRU_ICSS_CFG registers
+ * SYSCFG, ISRP, ISP, IESP, IECP, SCRP applicable on AMxxxx devices only
+ */
 #define PRUSS_CFG_REVID		0x00
 #define PRUSS_CFG_SYSCFG	0x04
 #define PRUSS_CFG_GPCFG0	0x08
@@ -126,12 +129,28 @@
 #define PRUSS_GPCFG_PRU_GPI_MODE_MASK		GENMASK(1, 0)
 #define PRUSS_GPCFG_PRU_GPI_MODE_SHIFT		0
 
+#define PRUSS_GPCFG_PRU_MUX_SEL_SHIFT		26
+#define PRUSS_GPCFG_PRU_MUX_SEL_MASK		GENMASK(29, 26)
+
 /* PRUSS_MII_RT register bits */
 #define PRUSS_MII_RT_EVENT_EN			BIT(0)
 
 /* PRUSS_SPP register bits */
 #define PRUSS_SPP_XFER_SHIFT_EN			BIT(1)
 #define PRUSS_SPP_PRU1_PAD_HP_EN		BIT(0)
+
+/**
+ * enum pruss_gp_mux_sel - PRUSS GPI/O Mux modes for the
+ * PRUSS_GPCFG0/1 registers
+ */
+enum pruss_gp_mux_sel {
+	PRUSS_GP_MUX_SEL_GP = 0,
+	PRUSS_GP_MUX_SEL_ENDAT,
+	PRUSS_GP_MUX_SEL_RESERVED,
+	PRUSS_GP_MUX_SEL_SD,
+	PRUSS_GP_MUX_SEL_MII2,
+	PRUSS_GP_MUX_MAX,
+};
 
 /**
  * struct pruss_intc_config - INTC configuration info
@@ -158,6 +177,7 @@ struct pru_rproc;
  * @lock: mutex to serialize access to resources
  * @cfg_lock: mutex to serialize access to CFG
  * @in_standby: flag for storing standby status
+ * @skip_syscfg: flag to indicate if PRCM master standby/slave idle is needed
  */
 struct pruss {
 	struct list_head node;
@@ -171,11 +191,14 @@ struct pruss {
 	struct mutex lock; /* PRU resource lock */
 	struct mutex cfg_lock; /* PRUSS CFG register access lock */
 	bool in_standby;
+	bool skip_syscfg;
 };
 
 int pruss_intc_configure(struct pruss *pruss,
 			 struct pruss_intc_config *intc_config);
 int pruss_intc_unconfigure(struct pruss *pruss,
 			   struct pruss_intc_config *intc_config);
+int pruss_cfg_set_gpmux(struct pruss *pruss, enum pruss_pru_id pru_id,
+			enum pruss_gp_mux_sel mux_sel);
 
 #endif	/* _PRUSS_H_ */

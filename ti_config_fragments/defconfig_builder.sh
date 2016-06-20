@@ -25,8 +25,10 @@
 # https://github.com/koalaman/shellcheck/blob/master/README.md
 # Also note that shellcheck must be at least at revision 0.3.3
 
-BUILD_TYPE_TAG="type:"
+DEBUG_CONFIG_TAG="debug_options"
 CONFIG_FRAGMENT_TAG="config-fragment="
+DISCLAIMER="\n*Please be advised that the Debug Option defconfigs may\nimpact \
+performance and should only be used for debugging.\n"
 
 # Template for temporary build files.. use PID to differentiate
 TMP_PREFIX=ti_defconfig_builder_$$
@@ -53,6 +55,7 @@ prepare_for_exit() {
 	D=$(dirname "$PROCESSOR_FILE")
 	rm -f "$PROCESSOR_FILE"
 	rm -f "$BUILD_TYPE_FILE"
+	rm -f "$TEMP_TYPE_FILE"
 	if [ -s "$OLD_CONFIG" ]; then
 		mv "$OLD_CONFIG" "$WORKING_PATH"/.config
 	fi
@@ -97,8 +100,8 @@ check_for_config_existance() {
 		# pass then these two variables should be empty.  If
 		# they fail then they should be N/A.
 		if [ -z "$CONFIG_FILE" -a -z "$CONFIG_FRAGMENTS" ]; then
-			y=$((y+1))
-			echo -e '\t'"$y". "$BT_TEMP" >> "$BUILD_TYPE_FILE"
+			max_configs=$((max_configs+1))
+			echo -e '\t'"$max_configs". "$BT_TEMP" >> "$BUILD_TYPE_FILE"
 		fi
 	fi
 }
@@ -107,9 +110,9 @@ choose_build_type() {
 	TEMP_BT_FILE=$(mktemp -t $TMP_TEMPLATE)
 	TEMP_BUILD_FILE=$(mktemp -t $TMP_TEMPLATE)
 
-	grep "$CHOSEN_PROCESSOR" "$DEFCONFIG_MAP_FILE" | grep "$BUILD_TYPE_TAG" | awk '{print$4}' > "$TEMP_BUILD_FILE"
+	grep "$DEFCONFIG_FILTER" "$DEFCONFIG_MAP_FILE" | grep "^classification:" | awk '{print$4}' > "$TEMP_BUILD_FILE"
 
-	y=0
+	max_configs=0
 	while true;
 	do
 		CONFIG_FILE=
@@ -133,7 +136,7 @@ choose_build_type() {
 	# Force the user to answer.  Maybe the user does not want to continue
 	while true;
 	do
-		echo -e "Available defconfig build options:\n"
+		echo -e "Available ""$DEFCONFIG_FILTER"" defconfig build options:\n"
 		cat "$BUILD_TYPE_FILE"
 		echo ""
 		read -p "Please enter the number of the defconfig to build or 'q' to exit: " REPLY
@@ -147,7 +150,8 @@ choose_build_type() {
 			CHOSEN_BUILD_TYPE=$(grep -w "$REPLY" "$BUILD_TYPE_FILE" | awk '{print$2}')
 			break
 		else
-			echo -e "\nThis is not a choice try again!\n"
+			echo -e "\n'$REPLY' is not a valid choice. Please \
+choose a value between '1' and '$max_configs':\n"
 		fi
 	done
 	rm "$TEMP_BT_FILE"
@@ -179,9 +183,9 @@ get_build_details() {
 
 		NUM_OF_BUILDS=$(wc -l "$BUILD_TYPE_FILE" | awk '{print$1}')
 		if [ "$NUM_OF_BUILDS" -eq 0 ]; then
-			grep -i "type:" "$DEFCONFIG_MAP_FILE" | awk '{print$4}'
+			awk '{if ($2 == "$BUILD_TYPE_TAG") print $4;}' "$DEFCONFIG_MAP_FILE"
 		else
-			grep "$CHOSEN_BUILD_TYPE" "$BUILD_TYPE_FILE" | awk '{print$5}'
+			awk '{print $5}' "$BUILD_TYPE_FILE"
 		fi
 
 		return 1
@@ -236,6 +240,45 @@ build_defconfig() {
 	fi
 }
 
+choose_defconfig_type() {
+
+	TEMP_TYPE_FILE=$(mktemp -t $TMP_TEMPLATE)
+
+	TYPE_FILE=$(awk '{print$2}' "$DEFCONFIG_MAP_FILE" | sort -u | grep -i "SDK_")
+
+	max_types=0
+	for TYPE_TMP in $TYPE_FILE;
+	do
+		max_types=$((max_types+1))
+		echo -e '\t' "$max_types." "$TYPE_TMP" >> "$TEMP_TYPE_FILE"
+	done
+	echo >> "$TEMP_TYPE_FILE"
+
+	while true;
+	do
+		cat "$TEMP_TYPE_FILE"
+		read -p "Please choose a defconfig type to build for or 'q' to exit: " REPLY
+		if [ "$REPLY" = "q" -o "$REPLY" = "Q" ]; then
+			prepare_for_exit
+		elif ! [[ "$REPLY" =~ ^[0-9]+$ ]]; then
+			echo -e "\n'$REPLY' is not a number for the build type.  Please try again!\n"
+			continue
+		elif [ "$REPLY" -gt '0' -a "$REPLY" -le "$max_types" ]; then
+			REPLY="$REPLY""."
+			DEFCONFIG_FILTER=$(awk '{if ($1 == "'"$REPLY"'") print $2;}' "$TEMP_TYPE_FILE")
+			break
+		else
+			echo -e "\n'$REPLY' is not a valid choice. Please \
+choose a value between '1' and '$max_types':\n"
+		fi
+	done
+
+	DEBUG_BUILD=$(grep "$DEFCONFIG_FILTER" "$DEFCONFIG_MAP_FILE" | grep -wc "$DEBUG_CONFIG_TAG" )
+	if [ "$DEBUG_BUILD" -gt '0' ]; then
+		echo -e "$DISCLAIMER"
+	fi
+}
+
 usage() {
 cat << EOF
 
@@ -286,11 +329,6 @@ if [ ! -e "$DEFCONFIG_MAP_FILE" ]; then
 	exit 1
 fi
 
-echo "***********************************************************************"
-echo "THIS SCRIPT IS EXPERIMENTAL AND MAY NOT PRODUCE A BOOTABLE KERNEL IMAGE"
-echo "***********************************************************************"
-echo ""
-
 PROCESSOR_FILE=$(mktemp -t $TMP_TEMPLATE)
 BUILD_TYPE_FILE=$(mktemp -t $TMP_TEMPLATE)
 OLD_CONFIG=$(mktemp -t $TMP_TEMPLATE)
@@ -310,6 +348,8 @@ if [ ! -z "$CHOSEN_BUILD_TYPE" ]; then
 	fi
 	exit 0
 fi
+
+choose_defconfig_type
 
 choose_build_type
 get_build_details
