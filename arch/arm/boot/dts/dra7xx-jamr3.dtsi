@@ -124,6 +124,13 @@
 &i2c4 {
 	status = "okay";
 	clock-frequency = <400000>;
+
+	pcf_jamr3_21: pcf8575@21 {
+		compatible = "nxp,pcf8575";
+		reg = <0x21>;
+		gpio-controller;
+		#gpio-cells = <2>;
+	};
 };
 
 &i2c_p3_exp {
@@ -173,5 +180,24 @@
 		IOVDD-supply = <&evm_3v3_sw>;
 		DRVDD-supply = <&evm_3v3_sw>;
 		DVDD-supply = <&aic_dvdd>;
+	};
+
+	tvp_5158: tvp5158@58 {
+		compatible= "ti,tvp5158";
+		reg = <0x58>;
+
+		port {
+			tvp_decoder: endpoint@0 {
+				pclk-sample = <0>;
+				channels = <0 2 4 6>;
+			};
+		};
+	};
+};
+
+&video_in {
+	endpoint {
+		slave-mode;
+		remote-endpoint = <&tvp_decoder>;
 	};
 };
