@@ -122,7 +122,7 @@
 
 		sound0_master: simple-audio-card,cpu {
 			sound-dai = <&mcasp3>;
-			system-clock-frequency = <5644800>;
+			system-clock-frequency = <11289600>;
 		};
 
 		simple-audio-card,codec {
@@ -622,7 +622,7 @@ i2c_p3_exp: &i2c5 {
 			  <&atl_clkin2_ck>;
 	assigned-clock-parents = <&sys_clkin2>, <&dpll_abe_m2_ck>;
 	assigned-clock-rates = <0>, <0>, <180633600>, <361267200>,
-			       <11289600>, <5644800>;
+			       <11289600>, <11289600>;
 
 	status = "okay";
 
