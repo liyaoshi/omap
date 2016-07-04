@@ -1175,6 +1175,15 @@ static int vip_try_fmt_vid_cap(struct file *file, void *priv,
 		if (ret)
 			break;
 
+		/* For interlaced capture, enum_frame size = FRAME size
+		 * while f->fmt.pix = FIELD size
+		 * Correct the subdev returned height params
+		 */
+		if (f->fmt.pix.field == V4L2_FIELD_ALTERNATE) {
+			fse.min_height /= 2;
+			fse.max_height /= 2;
+		}
+
 		vip_dbg(3, dev, "try_fmt loop:%d fourcc:%s size: %dx%d\n",
 			fse.index, fourcc_to_str(f->fmt.pix.pixelformat),
 			fse.max_width, fse.max_height);
