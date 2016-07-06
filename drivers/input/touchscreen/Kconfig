@@ -1106,4 +1106,16 @@ config TOUCHSCREEN_ROHM_BU21023
 	  To compile this driver as a module, choose M here: the
 	  module will be called bu21023_ts.
 
+config TOUCHSCREEN_LDC3001
+        tristate "LDC3001 ROIC based Touch screen controllers"
+        depends on I2C
+        help
+          Say Y here if you have a LDC3001 plus LGD STM32F103
+          MCU based touchscreen controller.
+
+          If unsure, say N.
+
+          To compile this driver as a module, choose M here: the
+          module will be called ldc3001_ts.
+
 endif

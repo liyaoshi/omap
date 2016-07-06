@@ -6,11 +6,10 @@
  * published by the Free Software Foundation.
  */
 
-#include "dra7-evm.dts"
-#include "dra7x-evm-lcd-lg.dtsi"
+#include "dra72-evm-revc.dts"
+#include "dra7x-evm-lcd-osd.dtsi"
 
-&ldc3001 {
+&touchscreen {
 	interrupt-parent = <&gpio1>;
-	interrupts = <2 IRQ_TYPE_LEVEL_HIGH>;
+	interrupts = <15 IRQ_TYPE_EDGE_FALLING>;
 };
-
