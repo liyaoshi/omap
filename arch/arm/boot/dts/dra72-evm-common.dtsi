@@ -16,8 +16,10 @@
 
 	aliases {
 		display0 = &hdmi0;
+		display1 = &fpd_disp;
 		sound0 = &snd0;
 		sound1 = &hdmi;
+		i2c7 = &disp_ser;
 	};
 
 	evm_3v3_sw: fixedregulator-evm_3v3 {
@@ -604,10 +606,57 @@ i2c_p3_exp: &i2c5 {
 	};
 };
 
+&i2c5 {
+	disp_ser: serializer@1b {
+		compatible = "ti,ds90uh925q";
+		reg = <0x1b>;
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+		ranges = <0x2c 0x2c>,
+			<0x1c 0x1c>;
+
+		disp_des: deserializer@2c {
+			compatible = "ti,ds90uh928q";
+			reg = <0x2c>;
+			slave-mode;
+		};
+
+		/* TLC chip for LCD panel power and backlight */
+		fpd_disp: tlc59108@1c {
+			status = "disabled";
+			reg = <0x1c>;
+			compatible = "ti,tlc59108-fpddisp";
+			enable-gpios = <&pcf_gpio_21 0 GPIO_ACTIVE_LOW>;
+			/* P0, SEL_GPMC_AD_VID_S0 */
+
+			port@lcd3 {
+					fpd_in: endpoint {
+					remote-endpoint = <&dpi_out3>;
+				};
+			};
+		};
+	};
+};
+
 &dss {
 	status = "ok";
 
 	vdda_video-supply = <&ldo5_reg>;
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+
+		port@lcd3 {
+			reg = <2>;
+
+			dpi_out3: endpoint {
+				remote-endpoint = <&fpd_in>;
+				data-lines = <24>;
+			};
+		};
+	};
 };
 
 &hdmi {
