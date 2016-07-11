@@ -1,0 +1,139 @@
+/*
+ * Copyright (C) 2013 Texas Instruments Incorporated - http://www.ti.com/
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ */
+
+#include "dra72-evm.dts"
+
+i2cexp: &i2c5 {
+};
+
+#include "dra7xx-vision.dtsi"
+
+/*
+ * Following is the mapping of the cameras and video ports:
+ * This is for the RevC onwards of DRA72 EVMs
+ *
+ * +-------+--------+---------+---------+---------+---------+
+ * | Video | LVDS   | DES I2C | Remote  | SER I2C | CAM I2C |
+ * | Port  | Camera | Addr    | I2C bus | Alias   | Alias   |
+ * +-------+--------+---------+---------+---------+---------+
+ * | vin1a |  cam2  |   0x64  |   12    |   0x75  |   0x39  |
+ * | vin1b |  cam5  |   0x69  |   15    |   0x78  |   0x3C  |
+ * | vin2a |  cam1  |   0x60  |   11    |   0x74  |   0x38  |
+ * | vin2b |  cam4  |   0x6C  |   14    |   0x77  |   0x3B  |
+ * +-------+--------+---------+---------+---------+---------+
+ *
+ * For easier access, all the remote devices can be accessed using the
+ * remote bus as well as the local bus. e.g. remote Serializer can be
+ * accessed as 11-0058 as well as 4-0074
+ */
+
+&dra72_vip_mux {
+
+	pinctrl-names = "default";
+	pinctrl-0 = <&vip_mux>;
+
+	/* Following is the mapping of interfaces
+	 * vin1A <= vin3A (remapped)
+	 * vin1B <= vin4B (remapped, only available option)
+	 * vin2A <= vin2A (default)
+	 * vin2B <= vin2B (default)
+	 */
+	vip_mux: pinmux_vin5a_pins {
+		pinctrl-single,pins = <
+			0x0	(VIP_VIN3A | VIP_VIN4B | VIP_VIN2A | VIP_VIN2B)
+		>;
+	};
+};
+
+&vip1 {
+	status = "okay";
+};
+
+&ovcam_fc {
+	/* Select between onboard OV10633 camera and daughter card vin
+	 * Also enable power for the OVcamera externally
+	 */
+	mux-gpios =
+		<&pcf_hdmi 2	GPIO_ACTIVE_LOW>,	/* VIN2_S0 */
+		<&pcf_hdmi 6	GPIO_ACTIVE_HIGH>,	/* VIN2_S2 */
+		<&gpio6 17	GPIO_ACTIVE_HIGH>;	/* OV_PWDN */
+};
+
+&ovcam1 {
+	/* Select between OV10633 camera, ethernet and external vin2a */
+	mux-gpios =
+		<&pcf_hdmi 2	GPIO_ACTIVE_LOW>,	/* VIN2_S0 */
+		<&pcf_hdmi 6	GPIO_ACTIVE_HIGH>;	/* VIN2_S2 */
+};
+
+&ovcam2 {
+	/* Select between GPMC, VOUT3 (FPDlink disp) and external vin1a */
+	mux-gpios =
+		<&pcf_gpio_21 0 GPIO_ACTIVE_HIGH>,	/* SEL_GPMC_AD_VID_S0 */
+		<&pcf_gpio_21 7 GPIO_ACTIVE_LOW>;	/* SEL_GPMC_AD_VID_S2 */
+};
+
+&ovcam3 {
+	status = "disabled";
+};
+
+&ovcam4 {
+	/* Select  */
+	mux-gpios =
+		<&pcf_hdmi 11	GPIO_ACTIVE_LOW>;	/* MMC3_SEL */
+};
+
+&ovcam5 {
+	/* No board muxes */
+};
+
+&ovcam6 {
+	status = "disabled";
+};
+
+&pcf_gpio_21 {
+	cpsw_sel_s0 {
+		status = "disabled";
+	};
+};
+
+&vin1a {
+	status = "okay";
+	endpoint@0 {
+		slave-mode;
+		remote-endpoint = <&cam2>;
+	};
+};
+
+&vin1b {
+	status = "okay";
+	endpoint@0 {
+		slave-mode;
+		remote-endpoint = <&cam5>;
+	};
+};
+
+&vin2a {
+	status = "okay";
+	endpoint@0 {
+		slave-mode;
+		remote-endpoint = <&cam1>;
+	};
+	endpoint@1 {
+		slave-mode;
+		remote-endpoint = <&ovcam>;
+	};
+};
+
+&vin2b {
+	status = "okay";
+	endpoint@0 {
+		slave-mode;
+		remote-endpoint = <&cam4>;
+	};
+};

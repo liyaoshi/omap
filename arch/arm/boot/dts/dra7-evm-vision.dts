@@ -1,0 +1,127 @@
+/*
+ * Copyright (C) 2013 Texas Instruments Incorporated - http://www.ti.com/
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ */
+
+#include "dra7-evm.dts"
+
+i2cexp: &i2c2 {
+};
+
+#include "dra7xx-vision.dtsi"
+
+/*
+ * Following is the mapping of the cameras and video ports:
+ *
+ * +--------+---------+---------+---------+---------+
+ * | LVDS   | DES I2C | Remote  | SER I2C | CAM I2C |
+ * | Camera | Addr    | I2C bus | Alias   | Alias   |
+ * +--------+---------+---------+---------+---------+
+ * |  cam1  |   0x60  |   11    |   0x74  |   0x38  |
+ * |  cam2  |   0x64  |   12    |   0x75  |   0x39  |
+ * |  cam3  |   0x68  |   13    |   0x76  |   0x3A  |
+ * |  cam4  |   0x6C  |   14    |   0x77  |   0x3B  |
+ * |  cam5  |   0x69  |   15    |   0x78  |   0x3C  |
+ * |  cam6  |   0x61  |   16    |   0x79  |   0x3D  |
+ * +--------+---------+---------+---------+---------+
+ *
+ * For easier access, all the remote devices can be accessed using the
+ * remote bus as well as the local bus. e.g. remote Serializer can be
+ * accessed as 11-0058 as well as 1-0074
+ */
+&vip1 {
+	status = "okay";
+};
+
+&vip2 {
+	status = "okay";
+};
+
+&vip3 {
+	status = "okay";
+};
+
+&ovcam_fc {
+	/* Select between onboard OV10633 camera and daughter card vin
+	 * Also enable power for the OVcamera externally
+	 */
+	mux-gpios =
+		<&pcf_hdmi 3	GPIO_ACTIVE_HIGH>,	/* CAM_FPD_MUX_S0 */
+		<&gpio6 17	GPIO_ACTIVE_HIGH>;	/* OV_PWDN */
+};
+
+&ovcam1 {
+	/* Select between onboard OV10633 camera and daughter card vin */
+	mux-gpios =
+		<&pcf_hdmi 3	GPIO_ACTIVE_HIGH>;	/* CAM_FPD_MUX_S0 */
+};
+
+&ovcam2 {
+	/* Select between vin2a and ethernet slave0 */
+	mux-gpios =
+		<&pcf_hdmi 2	GPIO_ACTIVE_LOW>;	/* VIN2_S0 */
+};
+
+&ovcam3 {
+	/* No board muxes */
+};
+
+&ovcam4 {
+	/* No board muxes */
+};
+
+&ovcam5 {
+	/* No board muxes */
+};
+
+&ovcam6 {
+	mux-gpios =
+		<&pcf_hdmi 1	GPIO_ACTIVE_HIGH>;	/* VIN6_SEL_S0 */
+};
+
+&vin1a {
+	status = "okay";
+	endpoint@cam1 {
+		slave-mode;
+		remote-endpoint = <&cam1>;
+	};
+	endpoint@ovcam {
+		slave-mode;
+		remote-endpoint = <&ovcam>;
+	};
+};
+
+&vin2a {
+	status = "okay";
+	endpoint@0 {
+		slave-mode;
+		remote-endpoint = <&cam2>;
+	};
+};
+
+&vin3a {
+	status = "okay";
+	endpoint@0 {
+		slave-mode;
+		remote-endpoint = <&cam3>;
+	};
+};
+
+&vin5a {
+	status = "okay";
+	endpoint@0 {
+		slave-mode;
+		remote-endpoint = <&cam4>;
+	};
+};
+
+&vin6a {
+	status = "okay";
+	endpoint@0 {
+		slave-mode;
+		remote-endpoint = <&cam6>;
+	};
+};
