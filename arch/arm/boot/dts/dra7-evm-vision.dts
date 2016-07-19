@@ -77,6 +77,9 @@ i2cexp: &i2c2 {
 	/* No board muxes */
 };
 
+/* Main board hogs this GPIO, it should be set by the camera driver */
+/delete-node/ &vin6_brdmux;
+
 &ovcam6 {
 	mux-gpios =
 		<&pcf_hdmi 1	GPIO_ACTIVE_HIGH>;	/* VIN6_SEL_S0 */

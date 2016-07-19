@@ -6,7 +6,7 @@
  * published by the Free Software Foundation.
  */
 
-#include "dra72-evm.dts"
+#include "dra72-evm-revc.dts"
 
 i2cexp: &i2c5 {
 };
