@@ -933,13 +933,6 @@ static int cpsw_set_coalesce(struct net_device *ndev,
 	u32 prescale = 0;
 	u32 addnl_dvdr = 1;
 	u32 coal_intvl = 0;
-	int ret;
-
-	ret = pm_runtime_get_sync(&priv->pdev->dev);
-	if (ret < 0) {
-		pm_runtime_put_noidle(&priv->pdev->dev);
-		return ret;
-	}
 
 	coal_intvl = coal->rx_coalesce_usecs;
 
@@ -994,8 +987,6 @@ update_return:
 		priv->coal_intvl = coal_intvl;
 	}
 
-	pm_runtime_put(&priv->pdev->dev);
-
 	return 0;
 }
 
@@ -1033,13 +1024,7 @@ static void cpsw_get_ethtool_stats(struct net_device *ndev,
 	struct cpdma_chan_stats tx_stats;
 	u32 val;
 	u8 *p;
-	int i, ret;
-
-	ret = pm_runtime_get_sync(&priv->pdev->dev);
-	if (ret < 0) {
-		pm_runtime_put_noidle(&priv->pdev->dev);
-		return;
-	}
+	int i;
 
 	/* Collect Davinci CPDMA stats for Rx and Tx Channel */
 	cpdma_chan_get_stats(priv->rxch, &rx_stats);
@@ -1066,8 +1051,6 @@ static void cpsw_get_ethtool_stats(struct net_device *ndev,
 			break;
 		}
 	}
-
-	pm_runtime_put(&priv->pdev->dev);
 }
 
 static int cpsw_common_res_usage_state(struct cpsw_priv *priv)
@@ -1304,6 +1287,7 @@ static int cpsw_ndo_open(struct net_device *ndev)
 
 	if (!cpsw_common_res_usage_state(priv)) {
 		struct cpsw_priv *priv_sl0 = cpsw_get_slave_priv(priv, 0);
+		int buf_num;
 
 		/* setup tx dma to fixed prio and zero offset */
 		cpdma_control_set(priv->dma, CPDMA_TX_PRIO_FIXED, 1);
@@ -1331,10 +1315,8 @@ static int cpsw_ndo_open(struct net_device *ndev)
 			enable_irq(priv->irqs_table[0]);
 		}
 
-		if (WARN_ON(!priv->data.rx_descs))
-			priv->data.rx_descs = 128;
-
-		for (i = 0; i < priv->data.rx_descs; i++) {
+		buf_num = cpdma_chan_get_rx_buf_num(priv->dma);
+		for (i = 0; i < buf_num; i++) {
 			struct sk_buff *skb;
 
 			ret = -ENOMEM;
@@ -2104,20 +2086,11 @@ static void cpsw_get_regs(struct net_device *ndev,
 {
 	struct cpsw_priv *priv = netdev_priv(ndev);
 	u32 *reg = p;
-	int ret;
-
-	ret = pm_runtime_get_sync(&priv->pdev->dev);
-	if (ret < 0) {
-		pm_runtime_put_noidle(&priv->pdev->dev);
-		return;
-	}
 
 	/* update CPSW IP version */
 	regs->version = priv->version;
 
 	cpsw_ale_dump(priv->ale, reg);
-
-	pm_runtime_put(&priv->pdev->dev);
 }
 
 static void cpsw_get_drvinfo(struct net_device *ndev,
@@ -2235,21 +2208,36 @@ static int cpsw_set_pauseparam(struct net_device *ndev,
 {
 	struct cpsw_priv *priv = netdev_priv(ndev);
 	bool link;
-	int ret;
-
-	ret = pm_runtime_get_sync(&priv->pdev->dev);
-	if (ret < 0) {
-		pm_runtime_put_noidle(&priv->pdev->dev);
-		return ret;
-	}
 
 	priv->rx_pause = pause->rx_pause ? true : false;
 	priv->tx_pause = pause->tx_pause ? true : false;
 
 	for_each_slave(priv, _cpsw_adjust_link, priv, &link);
-
-	pm_runtime_put(&priv->pdev->dev);
 	return 0;
+}
+
+static int cpsw_ethtool_op_begin(struct net_device *ndev)
+{
+	struct cpsw_priv *priv = netdev_priv(ndev);
+	int ret;
+
+	ret = pm_runtime_get_sync(&priv->pdev->dev);
+	if (ret < 0) {
+		cpsw_err(priv, drv, "ethtool begin failed %d\n", ret);
+		pm_runtime_put_noidle(&priv->pdev->dev);
+	}
+
+	return ret;
+}
+
+static void cpsw_ethtool_op_complete(struct net_device *ndev)
+{
+	struct cpsw_priv *priv = netdev_priv(ndev);
+	int ret;
+
+	ret = pm_runtime_put(&priv->pdev->dev);
+	if (ret < 0)
+		cpsw_err(priv, drv, "ethtool complete failed %d\n", ret);
 }
 
 static const struct ethtool_ops cpsw_ethtool_ops = {
@@ -2271,6 +2259,8 @@ static const struct ethtool_ops cpsw_ethtool_ops = {
 	.set_wol	= cpsw_set_wol,
 	.get_regs_len	= cpsw_get_regs_len,
 	.get_regs	= cpsw_get_regs,
+	.begin		= cpsw_ethtool_op_begin,
+	.complete	= cpsw_ethtool_op_complete,
 };
 
 static void cpsw_slave_init(struct cpsw_slave *slave, struct cpsw_priv *priv,
@@ -2344,12 +2334,6 @@ static int cpsw_probe_dt(struct cpsw_platform_data *data,
 		return -EINVAL;
 	}
 	data->bd_ram_size = prop;
-
-	if (of_property_read_u32(node, "rx_descs", &prop)) {
-		dev_err(&pdev->dev, "Missing rx_descs property in the DT.\n");
-		return -EINVAL;
-	}
-	data->rx_descs = prop;
 
 	if (of_property_read_u32(node, "mac_control", &prop)) {
 		dev_err(&pdev->dev, "Missing mac_control property in the DT.\n");
@@ -2853,8 +2837,6 @@ static int cpsw_probe(struct platform_device *pdev)
 clean_ale_ret:
 	cpsw_ale_destroy(priv->ale);
 clean_dma_ret:
-	cpdma_chan_destroy(priv->txch);
-	cpdma_chan_destroy(priv->rxch);
 	cpdma_ctlr_destroy(priv->dma);
 clean_runtime_disable_ret:
 	pm_runtime_disable(&pdev->dev);
@@ -2882,8 +2864,6 @@ static int cpsw_remove(struct platform_device *pdev)
 	unregister_netdev(ndev);
 
 	cpsw_ale_destroy(priv->ale);
-	cpdma_chan_destroy(priv->txch);
-	cpdma_chan_destroy(priv->rxch);
 	cpdma_ctlr_destroy(priv->dma);
 	pm_runtime_disable(&pdev->dev);
 	device_for_each_child(&pdev->dev, NULL, cpsw_remove_child_device);
