@@ -30,36 +30,21 @@ static struct sg_table *omap_gem_map_dma_buf(
 		enum dma_data_direction dir)
 {
 	struct drm_gem_object *obj = attachment->dmabuf->priv;
-	struct sg_table *sg;
 	dma_addr_t paddr;
 	int ret;
-
-	sg = kzalloc(sizeof(*sg), GFP_KERNEL);
-	if (!sg)
-		return ERR_PTR(-ENOMEM);
 
 	/* camera, etc, need physically contiguous.. but we need a
 	 * better way to know this..
 	 */
-	ret = omap_gem_get_paddr(obj, &paddr, true);
+	ret = omap_gem_get_paddr(obj, &paddr, false);
 	if (ret)
 		goto out;
-
-	ret = sg_alloc_table(sg, 1, GFP_KERNEL);
-	if (ret)
-		goto out;
-
-	sg_init_table(sg->sgl, 1);
-	sg_dma_len(sg->sgl) = obj->size;
-	sg_set_page(sg->sgl, pfn_to_page(PFN_DOWN(paddr)), obj->size, 0);
-	sg_dma_address(sg->sgl) = paddr;
 
 	/* this should be after _get_paddr() to ensure we have pages attached */
 	omap_gem_dma_sync(obj, dir);
 
-	return sg;
+	return omap_gem_get_sgt(obj);
 out:
-	kfree(sg);
 	return ERR_PTR(ret);
 }
 

@@ -808,6 +808,49 @@ void omap_gem_dma_sync(struct drm_gem_object *obj,
 	}
 }
 
+struct sg_table *omap_gem_get_sgt(struct drm_gem_object *obj)
+{
+	struct omap_gem_object *omap_obj = to_omap_bo(obj);
+	struct sg_table *sg;
+	int npages = obj->size >> PAGE_SHIFT;
+
+	sg = kmalloc(sizeof(*sg), GFP_KERNEL);
+	if (!sg)
+		return NULL;
+
+	if (omap_obj->paddr) {
+		if (sg_alloc_table(sg, 1, GFP_KERNEL))
+			goto free;
+
+		sg_init_table(sg->sgl, 1);
+		sg_dma_len(sg->sgl) = obj->size;
+		sg_set_page(sg->sgl, pfn_to_page(PFN_DOWN(omap_obj->paddr)),
+				obj->size, 0);
+		sg_dma_address(sg->sgl) = omap_obj->paddr;
+	} else if (omap_obj->pages) {
+		struct scatterlist *sgl;
+		unsigned int i = 0;
+
+		if (sg_alloc_table(sg, npages, GFP_KERNEL))
+			goto free;
+
+		for_each_sg(sg->sgl, sgl, npages, i) {
+			sg_set_page(sgl, omap_obj->pages[i], PAGE_SIZE, 0);
+			sg_dma_address(sgl) = omap_obj->addrs[i];
+			sg_dma_len(sgl) = PAGE_SIZE;
+		}
+	} else {
+		/* we should have had paddr or pages here */
+		goto free;
+	}
+	return sg;
+
+free:
+	sg_free_table(sg);
+	kfree(sg);
+	return NULL;
+}
+
 /* Get physical address for DMA.. if 'remap' is true, and the buffer is not
  * already contiguous, remap it to pin in physically contiguous memory.. (ie.
  * map in TILER)
@@ -821,18 +864,21 @@ int omap_gem_get_paddr(struct drm_gem_object *obj,
 
 	mutex_lock(&obj->dev->struct_mutex);
 
-	if (!is_contiguous(omap_obj) && remap && priv->has_dmm) {
-		if (omap_obj->paddr_cnt == 0) {
-			struct page **pages;
-			uint32_t npages = obj->size >> PAGE_SHIFT;
+	if (!is_contiguous(omap_obj)) {
+		struct page **pages;
+		uint32_t npages = obj->size >> PAGE_SHIFT;
+
+		ret = get_pages(obj, &pages);
+		if (ret)
+			goto fail;
+
+		if ((omap_obj->paddr_cnt == 0) &&
+		    ((omap_obj->flags & OMAP_BO_SCANOUT) || remap) &&
+		    priv->has_dmm) {
 			enum tiler_fmt fmt = gem2fmt(omap_obj->flags);
 			struct tiler_block *block;
 
 			BUG_ON(omap_obj->block);
-
-			ret = get_pages(obj, &pages);
-			if (ret)
-				goto fail;
 
 			if (omap_obj->flags & OMAP_BO_TILED) {
 				block = tiler_reserve_2d(fmt,
@@ -862,12 +908,12 @@ int omap_gem_get_paddr(struct drm_gem_object *obj,
 			omap_obj->paddr = tiler_ssptr(block);
 			omap_obj->block = block;
 
-			DBG("got paddr: %pad", &omap_obj->paddr);
+			omap_obj->paddr_cnt++;
+			*paddr = omap_obj->paddr;
+		} else if (omap_obj->paddr_cnt > 0) {
+			omap_obj->paddr_cnt++;
+			*paddr = omap_obj->paddr;
 		}
-
-		omap_obj->paddr_cnt++;
-
-		*paddr = omap_obj->paddr;
 	} else if (is_contiguous(omap_obj)) {
 		*paddr = omap_obj->paddr;
 	} else {
