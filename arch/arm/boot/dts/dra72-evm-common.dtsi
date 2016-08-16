@@ -610,6 +610,10 @@ i2c_p3_exp: &i2c5 {
 	vdda_video-supply = <&ldo5_reg>;
 };
 
+&bb2d {
+	status = "okay";
+};
+
 &hdmi {
 	status = "ok";
 
