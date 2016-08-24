@@ -223,7 +223,11 @@ int rproc_alloc_vring(struct rproc_vdev *rvdev, int i)
 	 * Allocate non-cacheable memory for the vring. In the future
 	 * this call will also configure the IOMMU for us
 	 */
-	va = dma_alloc_coherent(dev->parent, size, &dma, GFP_KERNEL);
+	if (rproc->late_attach) {
+		va = dma_malloc_coherent(dev->parent, size, &dma, GFP_KERNEL);
+	} else {
+		va = dma_alloc_coherent(dev->parent, size, &dma, GFP_KERNEL);
+	}
 	if (!va) {
 		dev_err(dev->parent, "dma_alloc_coherent failed\n");
 		return -EINVAL;
@@ -751,7 +755,11 @@ static int rproc_handle_carveout(struct rproc *rproc,
 	if (!carveout)
 		return -ENOMEM;
 
-	va = dma_alloc_coherent(dev->parent, rsc->len, &dma, GFP_KERNEL);
+	if (rproc->late_attach) {
+		va = dma_malloc_coherent(dev->parent, rsc->len, &dma, GFP_KERNEL);
+	} else {
+		va = dma_alloc_coherent(dev->parent, rsc->len, &dma, GFP_KERNEL);
+	}
 	if (!va) {
 		dev_err(dev->parent, "dma_alloc_coherent err: %d\n", rsc->len);
 		ret = -ENOMEM;
