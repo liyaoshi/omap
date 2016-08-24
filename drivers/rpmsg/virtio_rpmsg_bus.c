@@ -409,8 +409,11 @@ static int rpmsg_dev_probe(struct device *dev)
 		nsm.flags = RPMSG_NS_CREATE;
 
 		err = rpmsg_sendto(rpdev, &nsm, sizeof(nsm), RPMSG_NS_ADDR);
-		if (err)
+		if (err) {
 			dev_err(dev, "failed to announce service %d\n", err);
+			rpdrv->remove(rpdev);
+			rpmsg_destroy_ept(ept);
+		}
 	}
 
 out:
