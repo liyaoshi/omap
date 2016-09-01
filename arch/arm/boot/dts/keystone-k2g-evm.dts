@@ -71,7 +71,8 @@
 	soc {
 		mpm_mem: dspmem {
 			compatible = "ti,keystone-dsp-mem";
-			reg = <0x0c000000 0x00100000>,
+			reg = <0x0c000000 0x00040000>,
+			      <0x0c050000 0x000b0000>,
 			      <0xa0000000 0x20000000>;
 		};
 	};
@@ -142,6 +143,12 @@
 };
 
 &k2g_pinctrl {
+	ecap0_pins: ecap0_pins {
+		pinctrl-single,pins = <
+			K2G_CORE_IOPAD(0x1374) (BUFFER_CLASS_B | MUX_MODE4)	/* pr1_mdio_data.ecap0_in_apwm0_out */
+		>;
+	};
+
 	uart0_pins: pinmux_uart0_pins {
 		pinctrl-single,pins = <
 			K2G_CORE_IOPAD(0x11cc) (BUFFER_CLASS_B | PULL_DISABLE | MUX_MODE0)	/* uart0_rxd.uart0_rxd */
@@ -621,4 +628,10 @@
 
 &ddr3edac {
 	status = "okay";
+};
+
+&ecap0 {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&ecap0_pins>;
 };

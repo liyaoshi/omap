@@ -71,6 +71,7 @@ struct netcp_device {
 	struct list_head	interface_head;
 	struct list_head	modpriv_head;
 	struct device		*device;
+	struct notifier_block	nb;
 };
 
 struct netcp_inst_modpriv {
@@ -2042,10 +2043,6 @@ static int netcp_netdevice_event(struct notifier_block *unused,
 	return ret;
 }
 
-static struct notifier_block netcp_netdevice_nb __read_mostly = {
-	.notifier_call = netcp_netdevice_event,
-};
-
 static int netcp_probe(struct platform_device *pdev)
 {
 	struct device_node *node = pdev->dev.of_node;
@@ -2112,7 +2109,11 @@ static int netcp_probe(struct platform_device *pdev)
 			dev_err(dev, "module(%s) probe failed\n", module->name);
 	}
 	mutex_unlock(&netcp_modules_lock);
-	register_netdevice_notifier(&netcp_netdevice_nb);
+	netcp_device->nb.notifier_call = netcp_netdevice_event;
+	if (register_netdevice_notifier(&netcp_device->nb)) {
+		netcp_device->nb.notifier_call = NULL;
+		dev_err(dev, "Failed to create notifier\n");
+	}
 	return 0;
 
 probe_quit_interface:
@@ -2155,7 +2156,8 @@ static int netcp_remove(struct platform_device *pdev)
 	WARN(!list_empty(&netcp_device->interface_head),
 	     "%s interface list not empty!\n", pdev->name);
 
-	unregister_netdevice_notifier(&netcp_netdevice_nb);
+	if (netcp_device->nb.notifier_call)
+		unregister_netdevice_notifier(&netcp_device->nb);
 	pm_runtime_put_sync(&pdev->dev);
 	pm_runtime_disable(&pdev->dev);
 	platform_set_drvdata(pdev, NULL);
