@@ -2005,7 +2005,6 @@
 			cpdma_channels = <8>;
 			ale_entries = <1024>;
 			bd_ram_size = <0x2000>;
-			no_bd_ram = <0>;
 			mac_control = <0x20>;
 			slaves = <2>;
 			active_slave = <0>;
@@ -2250,7 +2249,7 @@
 					     "ti,am33xx-ehrpwm";
 				#pwm-cells = <3>;
 				reg = <0x48440200 0x80>;
-				clocks = <&ehrpwm0_tbclk>, <&l4_root_clk_div>;
+				clocks = <&ehrpwm1_tbclk>, <&l4_root_clk_div>;
 				clock-names = "tbclk", "fck";
 				status = "disabled";
 			};
@@ -2282,7 +2281,7 @@
 					     "ti,am33xx-ehrpwm";
 				#pwm-cells = <3>;
 				reg = <0x48442200 0x80>;
-				clocks = <&ehrpwm0_tbclk>, <&l4_root_clk_div>;
+				clocks = <&ehrpwm2_tbclk>, <&l4_root_clk_div>;
 				clock-names = "tbclk", "fck";
 				status = "disabled";
 			};
