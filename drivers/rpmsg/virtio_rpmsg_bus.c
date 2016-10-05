@@ -31,6 +31,7 @@
 #include <linux/jiffies.h>
 #include <linux/sched.h>
 #include <linux/wait.h>
+#include <linux/remoteproc.h>
 #include <linux/rpmsg.h>
 #include <linux/mutex.h>
 
@@ -1060,6 +1061,7 @@ static int rpmsg_probe(struct virtio_device *vdev)
 	int err = 0, i;
 	size_t total_buf_space;
 	bool notify;
+	struct rproc *rproc = rproc_vdev_to_rproc_safe(vdev);
 
 	vrp = kzalloc(sizeof(*vrp), GFP_KERNEL);
 	if (!vrp)
@@ -1093,9 +1095,15 @@ static int rpmsg_probe(struct virtio_device *vdev)
 	total_buf_space = vrp->num_bufs * RPMSG_BUF_SIZE;
 
 	/* allocate coherent memory for the buffers */
-	bufs_va = dma_alloc_coherent(vdev->dev.parent->parent,
-				     total_buf_space, &vrp->bufs_dma,
-				     GFP_KERNEL);
+	if (rproc && rproc->late_attach)
+		bufs_va = dma_malloc_coherent(vdev->dev.parent->parent,
+					      total_buf_space, &vrp->bufs_dma,
+					      GFP_KERNEL);
+	else
+		 bufs_va = dma_alloc_coherent(vdev->dev.parent->parent,
+					      total_buf_space, &vrp->bufs_dma,
+					      GFP_KERNEL);
+
 	if (!bufs_va) {
 		err = -ENOMEM;
 		goto vqs_del;

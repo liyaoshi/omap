@@ -145,6 +145,26 @@ struct dma_map_ops arm_dma_ops = {
 };
 EXPORT_SYMBOL(arm_dma_ops);
 
+static void *arm_dma_malloc(struct device *dev, size_t size, dma_addr_t *handle,
+			    gfp_t gfp, struct dma_attrs *attrs);
+
+struct dma_map_ops arm_dma_m_ops = {
+	.alloc			= arm_dma_malloc,
+	.free			= arm_dma_free,
+	.mmap			= arm_dma_mmap,
+	.get_sgtable		= arm_dma_get_sgtable,
+	.map_page		= arm_dma_map_page,
+	.unmap_page		= arm_dma_unmap_page,
+	.map_sg			= arm_dma_map_sg,
+	.unmap_sg		= arm_dma_unmap_sg,
+	.sync_single_for_cpu	= arm_dma_sync_single_for_cpu,
+	.sync_single_for_device	= arm_dma_sync_single_for_device,
+	.sync_sg_for_cpu	= arm_dma_sync_sg_for_cpu,
+	.sync_sg_for_device	= arm_dma_sync_sg_for_device,
+	.set_dma_mask		= arm_dma_set_mask,
+};
+EXPORT_SYMBOL(arm_dma_m_ops);
+
 static void *arm_coherent_dma_alloc(struct device *dev, size_t size,
 	dma_addr_t *handle, gfp_t gfp, struct dma_attrs *attrs);
 static void arm_coherent_dma_free(struct device *dev, size_t size, void *cpu_addr,
@@ -293,7 +313,8 @@ static void __dma_free_buffer(struct page *page, size_t size)
 
 static void *__alloc_from_contiguous(struct device *dev, size_t size,
 				     pgprot_t prot, struct page **ret_page,
-				     const void *caller, bool want_vaddr);
+				     const void *caller, bool want_vaddr,
+				     bool zero);
 
 static void *__alloc_remap_buffer(struct device *dev, size_t size, gfp_t gfp,
 				 pgprot_t prot, struct page **ret_page,
@@ -361,7 +382,8 @@ static int __init atomic_pool_init(void)
 
 	if (dev_get_cma_area(NULL))
 		ptr = __alloc_from_contiguous(NULL, atomic_pool_size, prot,
-					      &page, atomic_pool_init, true);
+					      &page, atomic_pool_init, true,
+					      true);
 	else
 		ptr = __alloc_remap_buffer(NULL, atomic_pool_size, gfp, prot,
 					   &page, atomic_pool_init, true);
@@ -530,7 +552,8 @@ static int __free_from_pool(void *start, size_t size)
 
 static void *__alloc_from_contiguous(struct device *dev, size_t size,
 				     pgprot_t prot, struct page **ret_page,
-				     const void *caller, bool want_vaddr)
+				     const void *caller, bool want_vaddr,
+				     bool zero)
 {
 	unsigned long order = get_order(size);
 	size_t count = size >> PAGE_SHIFT;
@@ -541,7 +564,8 @@ static void *__alloc_from_contiguous(struct device *dev, size_t size,
 	if (!page)
 		return NULL;
 
-	__dma_clear_buffer(page, size);
+	if (zero)
+		__dma_clear_buffer(page, size);
 
 	if (!want_vaddr)
 		goto out;
@@ -614,7 +638,8 @@ static void *__alloc_simple_buffer(struct device *dev, size_t size, gfp_t gfp,
 
 static void *__dma_alloc(struct device *dev, size_t size, dma_addr_t *handle,
 			 gfp_t gfp, pgprot_t prot, bool is_coherent,
-			 struct dma_attrs *attrs, const void *caller)
+			 struct dma_attrs *attrs, const void *caller,
+			 bool zero)
 {
 	u64 mask = get_coherent_dma_mask(dev);
 	struct page *page = NULL;
@@ -653,7 +678,7 @@ static void *__dma_alloc(struct device *dev, size_t size, dma_addr_t *handle,
 		addr = __alloc_simple_buffer(dev, size, gfp, &page);
 	else if (dev_get_cma_area(dev) && (gfp & __GFP_DIRECT_RECLAIM))
 		addr = __alloc_from_contiguous(dev, size, prot, &page,
-					       caller, want_vaddr);
+					       caller, want_vaddr, zero);
 	else if (is_coherent)
 		addr = __alloc_simple_buffer(dev, size, gfp, &page);
 	else if (!gfpflags_allow_blocking(gfp))
@@ -678,14 +703,30 @@ void *arm_dma_alloc(struct device *dev, size_t size, dma_addr_t *handle,
 	pgprot_t prot = __get_dma_pgprot(attrs, PAGE_KERNEL);
 
 	return __dma_alloc(dev, size, handle, gfp, prot, false,
-			   attrs, __builtin_return_address(0));
+			   attrs, __builtin_return_address(0),
+			   true);
 }
+
+/*
+ * Same as arm_dma_alloc except don't zero memory on alloc
+ */
+void *arm_dma_malloc(struct device *dev, size_t size, dma_addr_t *handle,
+		    gfp_t gfp, struct dma_attrs *attrs)
+{
+	pgprot_t prot = __get_dma_pgprot(attrs, PAGE_KERNEL);
+
+	return __dma_alloc(dev, size, handle, gfp, prot, false,
+			   attrs, __builtin_return_address(0),
+			   false);
+}
+
 
 static void *arm_coherent_dma_alloc(struct device *dev, size_t size,
 	dma_addr_t *handle, gfp_t gfp, struct dma_attrs *attrs)
 {
 	return __dma_alloc(dev, size, handle, gfp, PAGE_KERNEL, true,
-			   attrs, __builtin_return_address(0));
+			   attrs, __builtin_return_address(0),
+			   true);
 }
 
 static int __arm_dma_mmap(struct device *dev, struct vm_area_struct *vma,

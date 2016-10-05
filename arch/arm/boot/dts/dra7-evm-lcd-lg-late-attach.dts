@@ -1,0 +1,137 @@
+/*
+ * Copyright (C) 2015 Texas Instruments Incorporated - http://www.ti.com/
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ */
+
+#include "dra7-evm-lcd-lg.dts"
+
+&ipu2 {
+	ti,late-attach;
+	ti,no-idle-on-init;
+	ti,no-reset-on-init;
+};
+
+&timer3 {
+	ti,late-attach;
+	ti,no-idle-on-init;
+	ti,no-reset-on-init;
+};
+
+&timer4 {
+	ti,late-attach;
+	ti,no-idle-on-init;
+	ti,no-reset-on-init;
+};
+
+&timer9 {
+	ti,late-attach;
+	ti,no-idle-on-init;
+	ti,no-reset-on-init;
+};
+
+&mmu_ipu2{
+	ti,late-attach;
+	ti,no-idle-on-init;
+	ti,no-reset-on-init;
+};
+
+/* Uncomment below block to enable late attach for IPU1 */
+
+/*
+&ipu1 {
+	ti,late-attach;
+	ti,no-idle-on-init;
+	ti,no-reset-on-init;
+};
+
+&timer11 {
+	ti,late-attach;
+	ti,no-idle-on-init;
+	ti,no-reset-on-init;
+};
+
+&timer7 {
+	ti,late-attach;
+	ti,no-idle-on-init;
+	ti,no-reset-on-init;
+};
+
+&timer8 {
+	ti,late-attach;
+	ti,no-idle-on-init;
+	ti,no-reset-on-init;
+};
+
+&mmu_ipu1{
+	ti,late-attach;
+	ti,no-idle-on-init;
+	ti,no-reset-on-init;
+};
+*/
+
+/* Uncomment below block to enable late attach for DSP1 */
+
+/*
+&dsp1 {
+	ti,late-attach;
+	ti,no-idle-on-init;
+	ti,no-reset-on-init;
+};
+
+&timer5 {
+	ti,late-attach;
+	ti,no-idle-on-init;
+	ti,no-reset-on-init;
+};
+
+&timer10 {
+	ti,late-attach;
+	ti,no-idle-on-init;
+	ti,no-reset-on-init;
+};
+
+&mmu0_dsp1 {
+	ti,late-attach;
+	ti,no-idle-on-init;
+	ti,no-reset-on-init;
+};
+
+&mmu1_dsp1 {
+	ti,late-attach;
+	ti,no-idle-on-init;
+	ti,no-reset-on-init;
+};
+*/
+
+/* Uncomment below block to enable late attach for DSP2 */
+
+/*
+
+&dsp2 {
+	ti,late-attach;
+	ti,no-idle-on-init;
+	ti,no-reset-on-init;
+};
+
+&timer6 {
+	ti,late-attach;
+	ti,no-idle-on-init;
+	ti,no-reset-on-init;
+};
+
+&mmu0_dsp2 {
+	ti,late-attach;
+	ti,no-idle-on-init;
+	ti,no-reset-on-init;
+};
+
+&mmu1_dsp2 {
+	ti,late-attach;
+	ti,no-idle-on-init;
+	ti,no-reset-on-init;
+};
+
+*/
