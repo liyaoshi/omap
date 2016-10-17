@@ -386,6 +386,8 @@ static int tvp5158_s_parm(struct v4l2_subdev *sd, struct v4l2_streamparm *parms)
 
 	/* get the current standard */
 	current_std = priv->current_std;
+	if (current_std == STD_INVALID)
+		return -ENODEV;
 
 	*timeperframe =
 	    std_list[current_std].standard.frameperiod;
@@ -482,6 +484,36 @@ static int tvp5158_enum_frame_size(struct v4l2_subdev *sd,
 	return 0;
 }
 
+static int tvp5158_enum_frame_interval(struct v4l2_subdev *sd,
+				struct v4l2_subdev_pad_config *cfg,
+				struct v4l2_subdev_frame_interval_enum *fie)
+{
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	struct tvp5158_priv *priv = to_tvp5158(client);
+	enum tvp5158_std current_std;
+	struct v4l2_fract *timeperframe;
+
+	/* Each standard has one frame interval, so return
+	 * EINVAL if more are requested
+	 */
+	if (fie->index != 0)
+		return -EINVAL;
+
+	/* Get the current standard */
+	current_std = priv->current_std;
+
+	/* Check if current standard is invalid */
+	if (current_std == STD_INVALID)
+		return -EINVAL;
+
+	timeperframe = &fie->interval;
+	*timeperframe =
+		std_list[current_std].standard.frameperiod;
+
+	return 0;
+}
+
+
 static int tvp5158_of_probe(struct i2c_client *client,
 			struct device_node *node)
 {
@@ -535,6 +567,7 @@ static struct v4l2_subdev_video_ops tvp5158_video_ops = {
 static struct v4l2_subdev_pad_ops tvp5158_pad_ops = {
 	.enum_mbus_code		= tvp5158_enum_mbus_code,
 	.enum_frame_size	= tvp5158_enum_frame_size,
+	.enum_frame_interval	= tvp5158_enum_frame_interval,
 	.get_fmt		= tvp5158_get_fmt,
 	.set_fmt		= tvp5158_set_fmt,
 };
