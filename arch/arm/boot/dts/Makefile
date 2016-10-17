@@ -513,7 +513,8 @@ dtb-$(CONFIG_SOC_DRA7XX) += \
 	dra72-evm-revc.dtb \
 	dra72-evm-revc-lcd-osd101t2045.dtb \
 	dra72-evm-revc-lcd-osd101t2587.dtb \
-	dra72-evm-vision.dtb
+	dra72-evm-vision.dtb \
+	dra71-evm.dtb
 dtb-$(CONFIG_ARCH_ORION5X) += \
 	orion5x-lacie-d2-network.dtb \
 	orion5x-lacie-ethernet-disk-mini-v2.dtb \
