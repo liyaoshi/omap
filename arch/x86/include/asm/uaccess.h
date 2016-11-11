@@ -90,11 +90,12 @@ static inline bool __chk_range_not_ok(unsigned long addr, unsigned long size, un
 	likely(!__range_not_ok(addr, size, user_addr_max()))
 
 /*
- * The exception table consists of triples of addresses relative to the
- * exception table entry itself. The first address is of an instruction
- * that is allowed to fault, the second is the target at which the program
- * should continue. The third is a handler function to deal with the fault
- * caused by the instruction in the first field.
+ * The exception table consists of pairs of addresses relative to the
+ * exception table enty itself: the first is the address of an
+ * instruction that is allowed to fault, and the second is the address
+ * at which the program should continue.  No registers are modified,
+ * so it is entirely up to the continuation code to figure out what to
+ * do.
  *
  * All the routines below use bits of fixup code that are out of line
  * with the main instruction path.  This means when everything is well,
@@ -103,14 +104,13 @@ static inline bool __chk_range_not_ok(unsigned long addr, unsigned long size, un
  */
 
 struct exception_table_entry {
-	int insn, fixup, handler;
+	int insn, fixup;
 };
 /* This is not the generic standard exception_table_entry format */
 #define ARCH_HAS_SORT_EXTABLE
 #define ARCH_HAS_SEARCH_EXTABLE
 
-extern int fixup_exception(struct pt_regs *regs, int trapnr);
-extern bool ex_has_fault_handler(unsigned long ip);
+extern int fixup_exception(struct pt_regs *regs);
 extern int early_fixup_exception(unsigned long *ip);
 
 /*
@@ -339,7 +339,7 @@ do {									\
 #define __get_user_asm_u64(x, ptr, retval, errret) \
 	 __get_user_asm(x, ptr, retval, "q", "", "=r", errret)
 #define __get_user_asm_ex_u64(x, ptr) \
-	 __get_user_asm_ex(x, ptr, "q", "", "=r")
+	 __get_user_asm_ex(x, ptr, "q", "", "=&r")
 #endif
 
 #define __get_user_size(x, ptr, size, retval, errret)			\
@@ -386,13 +386,13 @@ do {									\
 	__chk_user_ptr(ptr);						\
 	switch (size) {							\
 	case 1:								\
-		__get_user_asm_ex(x, ptr, "b", "b", "=q");		\
+		__get_user_asm_ex(x, ptr, "b", "b", "=&q");		\
 		break;							\
 	case 2:								\
-		__get_user_asm_ex(x, ptr, "w", "w", "=r");		\
+		__get_user_asm_ex(x, ptr, "w", "w", "=&r");		\
 		break;							\
 	case 4:								\
-		__get_user_asm_ex(x, ptr, "l", "k", "=r");		\
+		__get_user_asm_ex(x, ptr, "l", "k", "=&r");		\
 		break;							\
 	case 8:								\
 		__get_user_asm_ex_u64(x, ptr);				\
@@ -405,12 +405,8 @@ do {									\
 #define __get_user_asm_ex(x, addr, itype, rtype, ltype)			\
 	asm volatile("1:	mov"itype" %1,%"rtype"0\n"		\
 		     "2:\n"						\
-		     ".section .fixup,\"ax\"\n"				\
-                     "3:xor"itype" %"rtype"0,%"rtype"0\n"		\
-		     "  jmp 2b\n"					\
-		     ".previous\n"					\
-		     _ASM_EXTABLE_EX(1b, 3b)				\
-		     : ltype(x) : "m" (__m(addr)))
+		     _ASM_EXTABLE_EX(1b, 2b)				\
+		     : ltype(x) : "m" (__m(addr)), "0" (0))
 
 #define __put_user_nocheck(x, ptr, size)			\
 ({								\
