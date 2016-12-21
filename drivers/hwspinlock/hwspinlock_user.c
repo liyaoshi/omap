@@ -53,7 +53,7 @@ static long hwspinlock_user_ioctl(struct file *filp, unsigned int cmd,
 	if (copy_from_user(&data, (void __user *)arg, _IOC_SIZE(cmd)))
 		return -EFAULT;
 
-	mutex_unlock(&user->mutex);
+	mutex_lock(&user->mutex);
 
 	switch (cmd) {
 	case HWSPINLOCK_USER_LOCK:
