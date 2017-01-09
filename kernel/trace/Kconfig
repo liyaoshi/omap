@@ -106,6 +106,7 @@ config TRACING
 	select BINARY_PRINTF
 	select EVENT_TRACING
 	select TRACE_CLOCK
+	select GPU_TRACEPOINTS
 
 config GENERIC_TRACER
 	bool
