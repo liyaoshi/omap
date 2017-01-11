@@ -16,10 +16,10 @@
 			"Line", "Line Out",
 			"Line", "Line In";
 		simple-audio-card,routing =
-			"Line Out",		"LLOUT",
-			"Line Out",		"RLOUT",
-			"LINE1L",		"Line In",
-			"LINE1R",		"Line In";
+			"Line Out",		"J3A LLOUT",
+			"Line Out",		"J3A RLOUT",
+			"J3A LINE1L",		"Line In",
+			"J3A LINE1R",		"Line In";
 		simple-audio-card,format = "dsp_b";
 		simple-audio-card,bitclock-master = <&jamr3_sound_master>;
 		simple-audio-card,frame-master = <&jamr3_sound_master>;
