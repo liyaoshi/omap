@@ -539,7 +539,10 @@ static u32 *iopte_alloc(struct omap_iommu *obj, u32 *iopgd, u32 da)
 	}
 
 pte_ready:
-	iopte = iopte_offset(iopgd, da);
+	if (obj->late_attach)
+		iopte = iopte_offset_lateattach(obj, iopgd, da);
+	else
+		iopte = iopte_offset(iopgd, da);
 
 	dev_vdbg(obj->dev,
 		 "%s: da:%08x pgd:%p *pgd:%08x pte:%p *pte:%08x\n",
@@ -691,8 +694,12 @@ iopgtable_lookup_entry(struct omap_iommu *obj, u32 da, u32 **ppgd, u32 **ppte)
 	if (!*iopgd)
 		goto out;
 
-	if (iopgd_is_table(*iopgd))
-		iopte = iopte_offset(iopgd, da);
+	if (iopgd_is_table(*iopgd)) {
+		if (obj->late_attach)
+			iopte = iopte_offset_lateattach(obj, iopgd, da);
+		else
+			iopte = iopte_offset(iopgd, da);
+	}
 out:
 	*ppgd = iopgd;
 	*ppte = iopte;
@@ -709,13 +716,23 @@ static size_t iopgtable_clear_entry_core(struct omap_iommu *obj, u32 da)
 
 	if (iopgd_is_table(*iopgd)) {
 		int i;
-		u32 *iopte = iopte_offset(iopgd, da);
+		u32 *iopte;
+
+		if (obj->late_attach)
+			iopte = iopte_offset_lateattach(obj, iopgd, da);
+		else
+			iopte = iopte_offset(iopgd, da);
 
 		bytes = IOPTE_SIZE;
 		if (*iopte & IOPTE_LARGE) {
 			nent *= 16;
 			/* rewind to the 1st entry */
-			iopte = iopte_offset(iopgd, (da & IOLARGE_MASK));
+			if (obj->late_attach)
+				iopte = iopte_offset_lateattach(obj, iopgd,
+							(da & IOLARGE_MASK));
+			else
+				iopte = iopte_offset(iopgd,
+							(da & IOLARGE_MASK));
 		}
 		bytes *= nent;
 		memset(iopte, 0, nent * sizeof(*iopte));
@@ -724,7 +741,11 @@ static size_t iopgtable_clear_entry_core(struct omap_iommu *obj, u32 da)
 		/*
 		 * do table walk to check if this table is necessary or not
 		 */
-		iopte = iopte_offset(iopgd, 0);
+		if (obj->late_attach)
+			iopte = iopte_offset_lateattach(obj, iopgd, 0);
+		else
+			iopte = iopte_offset(iopgd, 0);
+
 		for (i = 0; i < PTRS_PER_IOPTE; i++)
 			if (iopte[i])
 				goto out;
@@ -781,8 +802,13 @@ static void iopgtable_clear_entry_all(struct omap_iommu *obj)
 		if (!*iopgd)
 			continue;
 
-		if (iopgd_is_table(*iopgd))
-			iopte_free(iopte_offset(iopgd, 0));
+		if (iopgd_is_table(*iopgd)) {
+			if (obj->late_attach)
+				iopte_free(iopte_offset_lateattach(obj,
+								iopgd, 0));
+			else
+				iopte_free(iopte_offset(iopgd, 0));
+		}
 
 		*iopgd = 0;
 		flush_iopgd_range(iopgd, iopgd + 1);
@@ -825,7 +851,10 @@ static irqreturn_t iommu_fault_handler(int irq, void *data)
 		return IRQ_NONE;
 	}
 
-	iopte = iopte_offset(iopgd, da);
+	if (obj->late_attach)
+		iopte = iopte_offset_lateattach(obj, iopgd, da);
+	else
+		iopte = iopte_offset(iopgd, da);
 
 	dev_err(obj->dev, "%s: errs:0x%08x da:0x%08x pgd:0x%p *pgd:0x%08x pte:0x%p *pte:0x%08x\n",
 		obj->name, errs, da, iopgd, *iopgd, iopte, *iopte);
@@ -865,7 +894,7 @@ static struct omap_iommu *omap_iommu_attach(const char *name, u32 *iopgd)
 	if (obj->late_attach) {
 		iopgd_pa = iommu_read_reg(obj, MMU_TTB);
 		iopgd = devm_ioremap(obj->dev, iopgd_pa,
-					IOPGD_TABLE_SIZE);
+					2 * IOPGD_TABLE_SIZE);
 		if (!iopgd)
 			return ERR_PTR(-ENOMEM);
 	} else {
