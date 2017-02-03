@@ -864,14 +864,10 @@ static struct omap_iommu *omap_iommu_attach(const char *name, u32 *iopgd)
 
 	if (obj->late_attach) {
 		iopgd_pa = iommu_read_reg(obj, MMU_TTB);
-		if (obj->late_attach_dma_pool) {
-			iopgd = devm_ioremap(obj->dev, iopgd_pa,
-						IOPGD_TABLE_SIZE);
-			if (!iopgd)
-				return ERR_PTR(-ENOMEM);
-		} else {
-			iopgd = phys_to_virt(iopgd_pa);
-		}
+		iopgd = devm_ioremap(obj->dev, iopgd_pa,
+					IOPGD_TABLE_SIZE);
+		if (!iopgd)
+			return ERR_PTR(-ENOMEM);
 	} else {
 		iopgd_pa = virt_to_phys(iopgd);
 	}
@@ -904,7 +900,7 @@ static void omap_iommu_detach(struct omap_iommu *obj)
 	if (!obj || IS_ERR(obj))
 		return;
 
-	if (obj->late_attach && obj->late_attach_dma_pool && obj->iopgd)
+	if (obj->late_attach && obj->iopgd)
 		iounmap(obj->iopgd);
 
 	spin_lock(&obj->iommu_lock);
