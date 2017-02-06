@@ -2700,9 +2700,11 @@ static int vip_init_port(struct vip_port *port)
 	sd_fmt.which = V4L2_SUBDEV_FORMAT_ACTIVE;
 	sd_fmt.pad = 0;
 	ret = v4l2_subdev_call(port->subdev, pad, get_fmt, NULL, &sd_fmt);
-	if (ret)
+	if (ret) {
 		vip_dbg(1, dev, "init_port get_fmt failed in subdev: (%d)\n",
 			ret);
+		return ret;
+	}
 
 	/* try to find one that matches */
 	fmt = find_port_format_by_code(port, mbus_fmt->code);
@@ -3094,8 +3096,10 @@ static int vip_open(struct file *file)
 	if (!v4l2_fh_is_singular_file(file))
 		goto unlock;
 
-	if (vip_init_stream(stream))
+	if (vip_init_stream(stream)) {
+		v4l2_fh_release(file);
 		ret = -ENODEV;
+	}
 unlock:
 	mutex_unlock(&dev->mutex);
 	return ret;
