@@ -14,3 +14,11 @@
 	interrupts = <2 IRQ_TYPE_LEVEL_HIGH>;
 };
 
+
+/* Uncomment the below lines to enable the FPDLink display */
+
+/*
+&lcd_fpd {
+	status = "okay";
+};
+*/
