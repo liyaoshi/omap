@@ -30,29 +30,24 @@ static struct sg_table *omap_gem_map_dma_buf(
 		enum dma_data_direction dir)
 {
 	struct drm_gem_object *obj = attachment->dmabuf->priv;
-	dma_addr_t paddr;
-	int ret;
+	struct sg_table *sg;
 
-	/* camera, etc, need physically contiguous.. but we need a
-	 * better way to know this..
-	 */
-	ret = omap_gem_get_paddr(obj, &paddr, false);
-	if (ret)
-		goto out;
+	sg = omap_gem_get_sgt(obj);
+	if (IS_ERR(sg))
+		return sg;
 
 	/* this should be after _get_paddr() to ensure we have pages attached */
 	omap_gem_dma_sync(obj, dir);
 
-	return omap_gem_get_sgt(obj);
-out:
-	return ERR_PTR(ret);
+	return sg;
 }
 
 static void omap_gem_unmap_dma_buf(struct dma_buf_attachment *attachment,
 		struct sg_table *sg, enum dma_data_direction dir)
 {
 	struct drm_gem_object *obj = attachment->dmabuf->priv;
-	omap_gem_put_paddr(obj);
+
+	omap_gem_put_sgt(obj, sg);
 	sg_free_table(sg);
 	kfree(sg);
 }
