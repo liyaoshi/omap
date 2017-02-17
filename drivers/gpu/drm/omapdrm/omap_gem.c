@@ -812,7 +812,14 @@ struct sg_table *omap_gem_get_sgt(struct drm_gem_object *obj)
 {
 	struct omap_gem_object *omap_obj = to_omap_bo(obj);
 	struct sg_table *sg;
-	int npages = obj->size >> PAGE_SHIFT;
+	dma_addr_t paddr;
+	int ret;
+	bool remap;
+
+	remap = omap_obj->flags & OMAP_BO_SCANOUT;
+	ret = omap_gem_get_paddr(obj, &paddr, remap);
+	if (ret)
+		goto out;
 
 	sg = kmalloc(sizeof(*sg), GFP_KERNEL);
 	if (!sg)
@@ -830,6 +837,7 @@ struct sg_table *omap_gem_get_sgt(struct drm_gem_object *obj)
 	} else if (omap_obj->pages) {
 		struct scatterlist *sgl;
 		unsigned int i = 0;
+		int npages = obj->size >> PAGE_SHIFT;
 
 		if (sg_alloc_table(sg, npages, GFP_KERNEL))
 			goto free;
@@ -845,10 +853,21 @@ struct sg_table *omap_gem_get_sgt(struct drm_gem_object *obj)
 	}
 	return sg;
 
+out:
+	return ERR_PTR(ret);
 free:
 	sg_free_table(sg);
 	kfree(sg);
 	return NULL;
+}
+
+void omap_gem_put_sgt(struct drm_gem_object *obj, struct sg_table *sg)
+{
+	struct omap_gem_object *omap_obj = to_omap_bo(obj);
+	bool remap = omap_obj->flags & OMAP_BO_SCANOUT;
+
+	if (remap)
+		omap_gem_put_paddr(obj);
 }
 
 /* Get physical address for DMA.. if 'remap' is true, and the buffer is not

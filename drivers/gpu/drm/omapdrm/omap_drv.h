@@ -234,6 +234,7 @@ int omap_gem_get_pages(struct drm_gem_object *obj, struct page ***pages,
 		bool remap);
 int omap_gem_put_pages(struct drm_gem_object *obj);
 struct sg_table *omap_gem_get_sgt(struct drm_gem_object *obj);
+void omap_gem_put_sgt(struct drm_gem_object *obj, struct sg_table *sg);
 uint32_t omap_gem_flags(struct drm_gem_object *obj);
 int omap_gem_rotated_paddr(struct drm_gem_object *obj, uint32_t orient,
 		int x, int y, dma_addr_t *paddr);
