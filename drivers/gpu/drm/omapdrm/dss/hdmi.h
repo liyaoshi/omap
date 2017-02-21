@@ -365,9 +365,6 @@ struct omap_hdmi {
 	spinlock_t audio_playing_lock;
 	bool audio_playing;
 	bool display_enabled;
-
-	dss_hdmi_hpd_cb hpd_cb_func;
-	void *hpd_cb_data;
 };
 
 #endif
