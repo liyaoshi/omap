@@ -1,12 +1,12 @@
 /*
- * Copyright (C) 2015 Texas Instruments Incorporated - http://www.ti.com/
+ * Copyright (C) 2017 Texas Instruments Incorporated - http://www.ti.com/
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation.
  */
 
-#include "dra7-evm-lcd-lg.dts"
+#include "dra7-evm-lcd-osd.dts"
 
 /*
  * Memory reserved for IOMMU table carveout 0xbfc00000 for length 0x100000
@@ -54,7 +54,7 @@
 	ti,no-reset-on-init;
 };
 
-/* Uncomment below block to enable late attach for IPU1 */
+/*Uncomment below block to enable late attach for IPU1*/
 
 /*
 &ipu1 {
@@ -88,7 +88,7 @@
 };
 */
 
-/* Uncomment below block to enable late attach for DSP1 */
+/*Uncomment below block to enable late attach for DSP1*/
 
 /*
 &dsp1 {
@@ -122,10 +122,9 @@
 };
 */
 
-/* Uncomment below block to enable late attach for DSP2 */
+/*Uncomment below block to enable late attach for DSP2*/
 
 /*
-
 &dsp2 {
 	ti,late-attach;
 	ti,no-idle-on-init;
@@ -149,5 +148,5 @@
 	ti,no-idle-on-init;
 	ti,no-reset-on-init;
 };
-
 */
+

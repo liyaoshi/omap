@@ -197,7 +197,10 @@ static void dump_ioptable(struct seq_file *s)
 			continue;
 		}
 
-		iopte = iopte_offset(iopgd, 0);
+		if (obj->late_attach)
+			iopte = iopte_offset_lateattach(obj, iopgd, 0);
+		else
+			iopte = iopte_offset(iopgd, 0);
 		for (j = 0; j < PTRS_PER_IOPTE; j++, iopte++) {
 			if (!*iopte)
 				continue;
