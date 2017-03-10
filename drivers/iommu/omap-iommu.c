@@ -908,7 +908,8 @@ static struct omap_iommu *omap_iommu_attach(const char *name, u32 *iopgd)
 	err = iommu_enable(obj);
 	if (err)
 		goto err_enable;
-	flush_iotlb_all(obj);
+	if (!obj->late_attach)
+		flush_iotlb_all(obj);
 
 	spin_unlock(&obj->iommu_lock);
 
