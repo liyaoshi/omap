@@ -47,7 +47,17 @@
 			  <&hwspinlock 6>,
 			  <&hwspinlock 7>,
 			  <&hwspinlock 8>,
-			  <&hwspinlock 9>;
+			  <&hwspinlock 9>,
+			  <&hwspinlock 10>,
+			  <&hwspinlock 11>,
+			  <&hwspinlock 12>,
+			  <&hwspinlock 13>,
+			  <&hwspinlock 14>,
+			  <&hwspinlock 15>,
+			  <&hwspinlock 16>,
+			  <&hwspinlock 17>,
+			  <&hwspinlock 18>,
+			  <&hwspinlock 19>;
 	};
 
 	sr0 {
