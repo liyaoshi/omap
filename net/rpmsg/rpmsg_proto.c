@@ -543,6 +543,11 @@ static void __rpmsg_proto_cb(struct device *dev, int from_vproc_id, void *data,
 			 len, true);
 #endif
 
+	if (!sk) {
+		dev_warn(dev, "callback for deleted socket (from %d)\n", src);
+		return;
+	}
+
 	lock_sock(sk);
 
 	switch (sk->sk_state) {
@@ -609,8 +614,11 @@ static int rpmsg_proto_probe(struct rpmsg_channel *rpdev)
 		dev_err(dev, "id %d already associated to different vrp\n",
 			id);
 
-	if (dst == RPMSG_ADDR_ANY)
+	if (dst == RPMSG_ADDR_ANY) {
+		/* Set announce to false and avoid extra delay when binding. */
+		rpdev->announce = false;
 		return 0;
+	}
 
 	/* associate id/vrp for later lookup in rpmsg_sock_bind() */
 	if (!vrp) {

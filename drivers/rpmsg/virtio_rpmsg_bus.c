@@ -409,8 +409,11 @@ static int rpmsg_dev_probe(struct device *dev)
 		nsm.flags = RPMSG_NS_CREATE;
 
 		err = rpmsg_sendto(rpdev, &nsm, sizeof(nsm), RPMSG_NS_ADDR);
-		if (err)
+		if (err) {
 			dev_err(dev, "failed to announce service %d\n", err);
+			rpdrv->remove(rpdev);
+			rpmsg_destroy_ept(ept);
+		}
 	}
 
 out:
@@ -567,6 +570,13 @@ struct rpmsg_channel *__rpmsg_create_channel(struct virtproc_info *vrp,
 	ret = device_register(&rpdev->dev);
 	if (ret) {
 		dev_err(dev, "device_register failed: %d\n", ret);
+		put_device(&rpdev->dev);
+		return NULL;
+	}
+
+	if (!rpdev->ept) {
+		dev_err(dev, "failed to create ept\n");
+		device_unregister(&rpdev->dev);
 		put_device(&rpdev->dev);
 		return NULL;
 	}
