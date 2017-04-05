@@ -1531,9 +1531,9 @@ static int prueth_netdev_init(struct prueth *prueth,
 	emac->phydev = of_phy_connect(ndev, emac->phy_node,
 				      &emac_adjust_link, 0, emac->phy_if);
 	if (!emac->phydev) {
-		dev_err(prueth->dev, "couldn't connect to phy %s\n",
+		dev_dbg(prueth->dev, "couldn't connect to phy %s\n",
 			emac->phy_node->full_name);
-		ret = -ENODEV;
+		ret = -EPROBE_DEFER;
 		goto free;
 	}
 
@@ -1600,23 +1600,29 @@ static int prueth_probe(struct platform_device *pdev)
 	prueth->dev = dev;
 
 	pruss = pruss_get(dev);
-	if (!pruss) {
-		dev_err(dev, "unable to get pruss handle\n");
-		return -ENODEV;
+	if (IS_ERR(pruss)) {
+		ret = PTR_ERR(pruss);
+		if (ret == -EPROBE_DEFER)
+			dev_dbg(dev, "pruss not yet available, deferring probe.\n");
+		else
+			dev_err(dev, "unable to get pruss handle\n");
+		return ret;
 	}
 	prueth->pruss = pruss;
 
 	prueth->pru0 = pruss_rproc_get(pruss, PRUSS_PRU0);
 	if (IS_ERR(prueth->pru0)) {
 		ret = PTR_ERR(prueth->pru0);
-		dev_err(dev, "unable to get PRU0\n");
+		if (ret != -EPROBE_DEFER)
+			dev_err(dev, "unable to get PRU0: %d\n", ret);
 		goto pruss_put;
 	}
 
 	prueth->pru1 = pruss_rproc_get(pruss, PRUSS_PRU1);
 	if (IS_ERR(prueth->pru1)) {
 		ret = PTR_ERR(prueth->pru1);
-		dev_err(dev, "unable to get PRU1\n");
+		if (ret != -EPROBE_DEFER)
+			dev_err(dev, "unable to get PRU1: %d\n", ret);
 		goto put_pru0;
 	}
 
@@ -1671,13 +1677,11 @@ static int prueth_probe(struct platform_device *pdev)
 	}
 	ret = prueth_netdev_init(prueth, eth_node);
 	if (ret) {
-		if (ret == -EPROBE_DEFER) {
-			prueth->eth_node[PRUETH_PORT_MII0] = eth_node;
-			goto netdev_exit;
+		if (ret != -EPROBE_DEFER) {
+			dev_err(dev, "netdev init %s failed: %d\n",
+				eth_node->name, ret);
 		}
-		dev_err(dev, "netdev init %s failed: %d\n",
-			eth_node->name, ret);
-		of_node_put(eth_node);
+		goto netdev_exit;
 	} else {
 		prueth->eth_node[PRUETH_PORT_MII0] = eth_node;
 	}
@@ -1690,13 +1694,11 @@ static int prueth_probe(struct platform_device *pdev)
 	}
 	ret = prueth_netdev_init(prueth, eth_node);
 	if (ret) {
-		if (ret == -EPROBE_DEFER) {
-			prueth->eth_node[PRUETH_PORT_MII1] = eth_node;
-			goto netdev_exit;
+		if (ret != -EPROBE_DEFER) {
+			dev_err(dev, "netdev init %s failed: %d\n",
+				eth_node->name, ret);
 		}
-		dev_err(dev, "netdev init %s failed: %d\n",
-			eth_node->name, ret);
-		of_node_put(eth_node);
+		goto netdev_exit;
 	} else {
 		prueth->eth_node[PRUETH_PORT_MII1] = eth_node;
 	}
