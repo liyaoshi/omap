@@ -145,6 +145,19 @@
 			"AFML", "Line In",
 			"AFMR", "Line In";
 	};
+        kim {
+                compatible = "kim";
+                nshutdown_gpio = <142>;
+                dev_name = "/dev/ttyS4";
+                flow_cntrl = <1>;
+                baud_rate = <3686400>;
+        };
+
+        btwilink {
+                compatible = "btwilink";
+        };
+
+
 };
 
 &gpio8 {
