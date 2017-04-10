@@ -43,7 +43,7 @@
 			device_type = "cpu";
 			compatible = "arm,cortex-a15";
 			reg = <0x0>;
-
+			clock-frequency = <1500000000>;
 			operating-points = <
 				/* kHz    uV */
 				1000000 1060000
@@ -64,6 +64,7 @@
 			device_type = "cpu";
 			compatible = "arm,cortex-a15";
 			reg = <0x1>;
+			clock-frequency = <1500000000>;
 		};
 	};
 
