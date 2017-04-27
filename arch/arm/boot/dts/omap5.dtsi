@@ -43,7 +43,7 @@
 			device_type = "cpu";
 			compatible = "arm,cortex-a15";
 			reg = <0x0>;
-
+			clock-frequency = <1500000000>;
 			operating-points = <
 				/* kHz    uV */
 				1000000 1060000
@@ -64,6 +64,7 @@
 			device_type = "cpu";
 			compatible = "arm,cortex-a15";
 			reg = <0x1>;
+			clock-frequency = <1500000000>;
 		};
 	};
 
@@ -403,6 +404,7 @@
 			#interrupt-cells = <2>;
 			gpio-controller;
 			#gpio-cells = <2>;
+			status = "disabled";
 		};
 
 		i2c1: i2c@48070000 {
@@ -998,6 +1000,7 @@
 				clocks = <&sys_clkin>, <&sata_ref_clk>;
 				clock-names = "sysclk", "refclk";
 				#phy-cells = <0>;
+				status = "disabled";
 			};
 		};
 
@@ -1010,6 +1013,7 @@
 			clocks = <&sata_ref_clk>;
 			ti,hwmods = "sata";
 			ports-implemented = <0x1>;
+			status = "disabled";
 		};
 
 		dss: dss@58000000 {

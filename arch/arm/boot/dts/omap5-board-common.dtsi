@@ -145,6 +145,19 @@
 			"AFML", "Line In",
 			"AFMR", "Line In";
 	};
+        kim {
+                compatible = "kim";
+                nshutdown_gpio = <142>;
+                dev_name = "/dev/ttyS4";
+                flow_cntrl = <1>;
+                baud_rate = <3686400>;
+        };
+
+        btwilink {
+                compatible = "btwilink";
+        };
+
+
 };
 
 &gpio8 {
@@ -288,6 +301,9 @@
 			OMAP5_IOPAD(0x1b2, PIN_OUTPUT | MUX_MODE0) /* uart5_tx.uart5_tx */
 			OMAP5_IOPAD(0x1b4, PIN_INPUT_PULLUP | MUX_MODE0) /* uart5_cts.uart5_rts */
 			OMAP5_IOPAD(0x1b6, PIN_OUTPUT | MUX_MODE0) /* uart5_cts.uart5_rts */
+                        OMAP5_IOPAD(0x1c0, PIN_OUTPUT_PULLUP | MUX_MODE6) /* BT wakup  */
+                        OMAP5_IOPAD(0x1c2, PIN_OUTPUT_PULLUP | MUX_MODE6) /* BT EN */
+
 		>;
 	};
 
