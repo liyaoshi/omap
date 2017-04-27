@@ -11,6 +11,9 @@
 #include <dt-bindings/interrupt-controller/irq.h>
 
 / {
+	aliases {
+		rproc0 = &dsp;
+	};
 	arm {
 		#address-cells = <1>;
 		#size-cells = <1>;
@@ -22,6 +25,18 @@
 			ti,intc-size = <101>;
 			reg = <0xfffee000 0x2000>;
 		};
+	};
+	dsp: dsp@11800000 {
+		compatible = "ti,da850-dsp";
+		reg = <0x11800000 0x40000>,
+		      <0x11e00000 0x8000>,
+		      <0x11f00000 0x8000>,
+		      <0x01c14044 0x4>,
+		      <0x01c14174 0x8>;
+		reg-names = "l2sram", "l1pram", "l1dram", "host1cfg", "chipsig";
+		interrupt-parent = <&intc>;
+		interrupts = <28>;
+		status = "disabled";
 	};
 	soc@1c00000 {
 		compatible = "simple-bus";
@@ -207,7 +222,31 @@
 					0x4c 0x02000022 0x0f0000ff
 				>;
 			};
-
+			vpif_capture_pins: vpif_capture_pins {
+				pinctrl-single,bits = <
+					/* VP_DIN[2..7], VP_CLKIN1, VP_CLKIN0 */
+					0x38 0x11111111 0xffffffff
+					/* VP_DIN[10..15,0..1] */
+					0x3c 0x11111111 0xffffffff
+					/* VP_DIN[8..9] */
+					0x40 0x00000011 0x000000ff
+				>;
+			};
+			vpif_display_pins: vpif_display_pins {
+				pinctrl-single,bits = <
+					/* VP_DOUT[2..7] */
+					0x40 0x11111100 0xffffff00
+					/* VP_DOUT[10..15,0..1] */
+					0x44 0x11111111 0xffffffff
+					/*  VP_DOUT[8..9] */
+					0x48 0x00000011 0x000000ff
+					/*
+					 * VP_CLKOUT3, VP_CLKIN3,
+					 * VP_CLKOUT2, VP_CLKIN2
+					 */
+					0x4c 0x00111100 0x00ffff00
+				>;
+			};
 		};
 		prictrl: priority-controller@14110 {
 			compatible = "ti,da850-mstpri";
@@ -326,6 +365,24 @@
 			dma-names = "rx", "tx";
 			status = "disabled";
 		};
+		vpif: video@217000 {
+			compatible = "ti,da850-vpif";
+			reg = <0x217000 0x1000>;
+			interrupts = <92>;
+			status = "disabled";
+
+			/* VPIF capture port */
+			port@0 {
+				#address-cells = <1>;
+				#size-cells = <0>;
+			};
+
+			/* VPIF display port */
+			port@1 {
+				#address-cells = <1>;
+				#size-cells = <0>;
+			};
+		};
 		mmc1: mmc@21b000 {
 			compatible = "ti,da830-mmc";
 			reg = <0x21b000 0x1000>;
@@ -403,6 +460,12 @@
 			dr_mode = "otg";
 			phys = <&usb_phy 0>;
 			phy-names = "usb-phy";
+			status = "disabled";
+		};
+		sata: sata@218000 {
+			compatible = "ti,da850-ahci";
+			reg = <0x218000 0x2000>, <0x22c018 0x4>;
+			interrupts = <67>;
 			status = "disabled";
 		};
 		mdio: mdio@224000 {

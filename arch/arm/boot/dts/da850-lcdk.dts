@@ -26,6 +26,19 @@
 		reg = <0xc0000000 0x08000000>;
 	};
 
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		dsp_cma_pool: dsp_cma@c3000000 {
+			compatible = "shared-dma-pool";
+			reg = <0xc3000000 0x1000000>;
+			reusable;
+			status = "okay";
+		};
+	};
+
 	sound {
 		compatible = "simple-audio-card";
 		simple-audio-card,name = "DA850/OMAP-L138 LCDK";
@@ -159,6 +172,10 @@
 };
 
 &gpio {
+	status = "okay";
+};
+
+&sata {
 	status = "okay";
 };
 
@@ -308,4 +325,22 @@
 			remote-endpoint = <&vga_bridge_in>;
 		};
 	};
+};
+
+&vpif {
+	pinctrl-names = "default";
+	pinctrl-0 = <&vpif_capture_pins>;
+	status = "okay";
+
+	/* VPIF capture port */
+	port {
+		vpif_ch0: endpoint {
+			  bus-width = <8>;
+		};
+	};
+};
+
+&dsp {
+	status = "okay";
+	memory-region = <&dsp_cma_pool>;
 };
