@@ -22,6 +22,7 @@
 #include <linux/i2c.h>
 #include <linux/input.h>
 #include <linux/input/mt.h>
+#include <linux/input-polldev.h>
 #include <linux/module.h>
 #include <linux/delay.h>
 #include <linux/irq.h>
@@ -34,6 +35,7 @@
 struct goodix_ts_data {
 	struct i2c_client *client;
 	struct input_dev *input_dev;
+	struct input_polled_dev	*poll_dev;
 	int abs_x_max;
 	int abs_y_max;
 	bool swapped_x_y;
@@ -76,6 +78,8 @@ struct goodix_ts_data {
 #define RESOLUTION_LOC		1
 #define MAX_CONTACTS_LOC	5
 #define TRIGGER_LOC		6
+
+#define TSC_DEFAULT_POLL_PERIOD 30 /* ms */
 
 static const unsigned long goodix_irq_flags[] = {
 	IRQ_TYPE_EDGE_RISING,
@@ -281,6 +285,20 @@ static void goodix_process_events(struct goodix_ts_data *ts)
 	input_sync(ts->input_dev);
 }
 
+static void _goodix_process_events(struct goodix_ts_data *ts)
+{
+	goodix_process_events(ts);
+
+	if (goodix_i2c_write_u8(ts->client, GOODIX_READ_COOR_ADDR, 0) < 0)
+		dev_err(&ts->client->dev, "I2C write end_cmd error\n");
+
+}
+static void goodix_poll(struct input_polled_dev *poll_dev)
+{
+	struct goodix_ts_data *ts = poll_dev->private;
+
+	_goodix_process_events(ts);
+}
 /**
  * goodix_ts_irq_handler - The IRQ handler
  *
@@ -291,10 +309,7 @@ static irqreturn_t goodix_ts_irq_handler(int irq, void *dev_id)
 {
 	struct goodix_ts_data *ts = dev_id;
 
-	goodix_process_events(ts);
-
-	if (goodix_i2c_write_u8(ts->client, GOODIX_READ_COOR_ADDR, 0) < 0)
-		dev_err(&ts->client->dev, "I2C write end_cmd error\n");
+	_goodix_process_events(ts);
 
 	return IRQ_HANDLED;
 }
@@ -614,6 +629,58 @@ static int goodix_request_input_dev(struct goodix_ts_data *ts)
 	return 0;
 }
 
+static int goodix_request_input_polled_dev(struct goodix_ts_data *ts)
+{
+	int error;
+	struct input_polled_dev *poll_dev;
+
+	dev_err(&ts->client->dev, "Setting up polling.\n");
+	poll_dev = input_allocate_polled_device();
+	if (!poll_dev) {
+		dev_err(&ts->client->dev, "Failed to allocate polled input device.\n");
+		error = -ENOMEM;
+		return error;
+	}
+
+	ts->poll_dev = poll_dev;
+
+	poll_dev->private = ts;
+	poll_dev->poll = goodix_poll;
+	poll_dev->poll_interval = TSC_DEFAULT_POLL_PERIOD;
+
+	ts->input_dev = poll_dev->input;
+	if (!ts->input_dev) {
+		dev_err(&ts->client->dev, "Failed to allocate input device.");
+		return -ENOMEM;
+	}
+
+	input_set_abs_params(ts->input_dev, ABS_MT_POSITION_X,
+			     0, ts->abs_x_max, 0, 0);
+	input_set_abs_params(ts->input_dev, ABS_MT_POSITION_Y,
+			     0, ts->abs_y_max, 0, 0);
+	input_set_abs_params(ts->input_dev, ABS_MT_WIDTH_MAJOR, 0, 255, 0, 0);
+	input_set_abs_params(ts->input_dev, ABS_MT_TOUCH_MAJOR, 0, 255, 0, 0);
+
+	input_mt_init_slots(ts->input_dev, ts->max_touch_num,
+			    INPUT_MT_DIRECT | INPUT_MT_DROP_UNUSED);
+
+	ts->input_dev->name = "Goodix Capacitive TouchScreen";
+	ts->input_dev->phys = "input/ts";
+	ts->input_dev->id.bustype = BUS_I2C;
+	ts->input_dev->id.vendor = 0x0416;
+	ts->input_dev->id.product = ts->id;
+	ts->input_dev->id.version = ts->version;
+
+	error = input_register_polled_device(poll_dev);
+	if (error) {
+		dev_err(&ts->client->dev,
+			"Failed to register input device: %d", error);
+		return error;
+	}
+
+	return 0;
+}
+
 /**
  * goodix_configure_dev - Finish device initialization
  *
@@ -637,15 +704,23 @@ static int goodix_configure_dev(struct goodix_ts_data *ts)
 
 	goodix_read_config(ts);
 
-	error = goodix_request_input_dev(ts);
-	if (error)
-		return error;
+	if (ts->client->irq) {
+		error = goodix_request_input_dev(ts);
+		if (error)
+			return error;
+		ts->irq_flags = goodix_irq_flags[ts->int_trigger_type] |
+			IRQF_ONESHOT;
+		error = goodix_request_irq(ts);
+		if (error) {
+			dev_err(&ts->client->dev, "request IRQ failed: %d\n",
+				error);
+			return error;
+		}
+	} else {
+		/* setup polling if IRQ is not defined */
 
-	ts->irq_flags = goodix_irq_flags[ts->int_trigger_type] | IRQF_ONESHOT;
-	error = goodix_request_irq(ts);
-	if (error) {
-		dev_err(&ts->client->dev, "request IRQ failed: %d\n", error);
-		return error;
+		error = goodix_request_input_polled_dev(ts);
+
 	}
 
 	return 0;
