@@ -666,7 +666,8 @@ int omap_gem_dumb_create(struct drm_file *file, struct drm_device *dev,
 	};
 
 	return omap_gem_new_handle(dev, file, gsize,
-			OMAP_BO_SCANOUT | OMAP_BO_WC, &args->handle);
+			OMAP_BO_SCANOUT | OMAP_BO_WC | args->flags,
+			&args->handle);
 }
 
 /**
