@@ -484,8 +484,32 @@ static struct pruss_platform_data pruss_pdata = {
 #endif
 
 #ifdef CONFIG_SOC_OMAP5
+
+static struct ti_st_plat_data wilink_pdata = {
+	.nshutdown_gpio = 142,
+	.dev_name = "/dev/ttyS4",
+	.flow_cntrl = 1,
+	.baud_rate = 3686400,
+};
+
+static struct platform_device wl18xx_device = {
+	.name	= "kim",
+	.id	= -1,
+	.dev	= {
+		.platform_data = &wilink_pdata,
+	}
+};
+
+
+static struct platform_device btwilink_device = {
+	.name	= "btwilink",
+	.id	= -1,
+};
+
 static void __init omap5_uevm_legacy_init(void)
 {
+	platform_device_register(&wl18xx_device);
+	platform_device_register(&btwilink_device);
 }
 #endif
 
