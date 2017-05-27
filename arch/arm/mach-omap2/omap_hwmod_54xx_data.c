@@ -930,30 +930,6 @@ static struct omap_hwmod omap54xx_gpu_hwmod = {
 };
 
 /*
- * 'bb2d' class
- *
- */
-
-static struct omap_hwmod_class dra7xx_bb2d_hwmod_class = {
-	.name	= "bb2d",
-};
-
-/* bb2d */
-static struct omap_hwmod dra7xx_bb2d_hwmod = {
-	.name		= "bb2d",
-	.class		= &dra7xx_bb2d_hwmod_class,
-	.clkdm_name	= "dss_clkdm",
-	.main_clk	= "dpll_core_h24x2_ck",
-	.prcm = {
-		.omap4 = {
-			.clkctrl_offs = OMAP54XX_CM_DSS_BB2D_CLKCTRL_OFFSET,
-			.context_offs = OMAP54XX_RM_DSS_BB2D_CONTEXT_OFFSET,
-			.modulemode   = MODULEMODE_SWCTRL,
-		},
-	},
-};
-
-/*
  * 'i2c' class
  * multimaster high-speed i2c controller
  */
@@ -2596,18 +2572,9 @@ static struct omap_hwmod_ocp_if omap54xx_l3_main_2__gpmc = {
 static struct omap_hwmod_ocp_if omap54xx_l3_main_2__gpu = {
 	.master		= &omap54xx_l3_main_2_hwmod,
 	.slave		= &omap54xx_gpu_hwmod,
-	.clk		= "l3_iclk_div",
+	.clk		= "gpu_l3_iclk",
 	.user		= OCP_USER_MPU | OCP_USER_SDMA,
 };
-
-/* l3_main_1 -> bb2d */
-static struct omap_hwmod_ocp_if dra7xx_l3_main_1__bb2d = {
-	.master		= &omap54xx_l3_main_2_hwmod,
-	.slave		= &dra7xx_bb2d_hwmod,
-	.clk		= "l3_iclk_div",
-	.user		= OCP_USER_MPU | OCP_USER_SDMA,
-};
-
 /* l4_per -> i2c1 */
 static struct omap_hwmod_ocp_if omap54xx_l4_per__i2c1 = {
 	.master		= &omap54xx_l4_per_hwmod,
@@ -3001,7 +2968,6 @@ static struct omap_hwmod_ocp_if *omap54xx_hwmod_ocp_ifs[] __initdata = {
 	&omap54xx_l4_per__gpio8,
 	&omap54xx_l3_main_2__gpmc,
 	&omap54xx_l3_main_2__gpu,
-	&dra7xx_l3_main_1__bb2d,
 	&omap54xx_l4_per__i2c1,
 	&omap54xx_l4_per__i2c2,
 	&omap54xx_l4_per__i2c3,
