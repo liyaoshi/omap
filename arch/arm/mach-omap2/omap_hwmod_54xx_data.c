@@ -2967,7 +2967,7 @@ static struct omap_hwmod_ocp_if *omap54xx_hwmod_ocp_ifs[] __initdata = {
 	&omap54xx_l4_per__gpio7,
 	&omap54xx_l4_per__gpio8,
 	&omap54xx_l3_main_2__gpmc,
-	&omap54xx_l3_main_2__gpu,
+//	&omap54xx_l3_main_2__gpu,
 	&omap54xx_l4_per__i2c1,
 	&omap54xx_l4_per__i2c2,
 	&omap54xx_l4_per__i2c3,
