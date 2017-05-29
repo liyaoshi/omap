@@ -252,14 +252,13 @@ obj-y					+= omap_phy_internal.o
 obj-$(CONFIG_MACH_OMAP2_TUSB6010)	+= usb-tusb6010.o
 obj-y					+= usb-host.o
 
-onenand-$(CONFIG_MTD_ONENAND_OMAP2)	:= gpmc-onenand.o
-obj-y					+= $(onenand-m) $(onenand-y)
+# onenand-$(CONFIG_MTD_ONENAND_OMAP2)	:= gpmc-onenand.o
+# obj-y					+= $(onenand-m) $(onenand-y)
+# nand-$(CONFIG_MTD_NAND_OMAP2)		:= gpmc-nand.o
+# obj-y					+= $(nand-m) $(nand-y)
 
-nand-$(CONFIG_MTD_NAND_OMAP2)		:= gpmc-nand.o
-obj-y					+= $(nand-m) $(nand-y)
-
-smsc911x-$(CONFIG_SMSC911X)		:= gpmc-smsc911x.o
-obj-y					+= $(smsc911x-m) $(smsc911x-y)
+# smsc911x-$(CONFIG_SMSC911X)		:= gpmc-smsc911x.o
+# obj-y					+= $(smsc911x-m) $(smsc911x-y)
 
 obj-y					+= common-board-devices.o twl-common.o dss-common.o
 
