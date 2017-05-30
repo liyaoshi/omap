@@ -899,8 +899,8 @@ static struct omap_hwmod omap54xx_gpmc_hwmod = {
  */
 
 static struct omap_hwmod_class_sysconfig omap54xx_gpu_sysc = {
-	.rev_offs	= 0x0000,
-	.sysc_offs	= 0x0010,
+	.rev_offs	= 0xfe00,
+	.sysc_offs	= 0xfe10,
 	.sysc_flags	= (SYSC_HAS_MIDLEMODE | SYSC_HAS_SIDLEMODE),
 	.idlemodes	= (SIDLE_FORCE | SIDLE_NO | SIDLE_SMART |
 			   SIDLE_SMART_WKUP | MSTANDBY_FORCE | MSTANDBY_NO |
@@ -912,8 +912,6 @@ static struct omap_hwmod_class omap54xx_gpu_hwmod_class = {
 	.name	= "gpu",
 	.sysc	= &omap54xx_gpu_sysc,
 };
-
-/* gpu */
 
 static struct omap_hwmod omap54xx_gpu_hwmod = {
 	.name		= "gpu",
@@ -2572,7 +2570,7 @@ static struct omap_hwmod_ocp_if omap54xx_l3_main_2__gpmc = {
 static struct omap_hwmod_ocp_if omap54xx_l3_main_2__gpu = {
 	.master		= &omap54xx_l3_main_2_hwmod,
 	.slave		= &omap54xx_gpu_hwmod,
-	.clk		= "gpu_l3_iclk",
+	.clk		= "l3_iclk_div",
 	.user		= OCP_USER_MPU | OCP_USER_SDMA,
 };
 /* l4_per -> i2c1 */
@@ -2967,7 +2965,7 @@ static struct omap_hwmod_ocp_if *omap54xx_hwmod_ocp_ifs[] __initdata = {
 	&omap54xx_l4_per__gpio7,
 	&omap54xx_l4_per__gpio8,
 	&omap54xx_l3_main_2__gpmc,
-//	&omap54xx_l3_main_2__gpu,
+	&omap54xx_l3_main_2__gpu,
 	&omap54xx_l4_per__i2c1,
 	&omap54xx_l4_per__i2c2,
 	&omap54xx_l4_per__i2c3,

@@ -1016,18 +1016,18 @@
 			status = "disabled";
 		};
 
-/*
-		gpu: gpu@0x56000000 {
-			compatible = "ti,dra7-sgx544", "img,sgx544";
-			reg = <0x56000000 0x10000>;
-			reg-names = "gpu_ocp_base";
-			interrupts = <GIC_SPI 24 IRQ_TYPE_LEVEL_HIGH>;
-			ti,hwmods = "gpu";
-			clocks = <&dpll_core_h14x2_ck>, <&dpll_per_h24x2_ck>,
-					<&gpu_core_gclk_mux>, <&gpu_hyd_gclk_mux>;
-			clock-names = "core", "per", "gpu_core", "gpu_hyd";
-		};
-*/
+                gpu: gpu@56000000 {
+                        compatible = "ti,dra7-sgx544", "img,sgx544";
+                        reg = <0x56000000 0x10000>;
+                        reg-names = "gpu_ocp_base";
+                        interrupts = <GIC_SPI 21 IRQ_TYPE_LEVEL_HIGH>;
+                        ti,hwmods = "gpu";
+                        clocks = <&l3_iclk_div>, <&gpu_core_gclk_mux>,
+                                <&gpu_hyd_gclk_mux>;
+                        clock-names = "iclk", "fclk1", "fclk2";
+                };
+
+
 		dss: dss@58000000 {
 			compatible = "ti,omap5-dss";
 			reg = <0x58000000 0x80>;
