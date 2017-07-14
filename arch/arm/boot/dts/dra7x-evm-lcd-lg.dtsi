@@ -12,7 +12,6 @@
 	aliases {
 		display0 = &tlc59108;
 		display1 = &hdmi0;
-		display2 = &fpd_disp;
 	};
 
 	backlight {
