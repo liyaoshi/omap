@@ -14,7 +14,6 @@
 #define FPD3_DES_SLAVE_AL0		0x10
 
 #define FPD3_DES_GN_STS			0x1c
-	#define SIGNAL_DETECT	(1<<1)
 #define FPD3_DES_GPIO_01		0x1d
 #define FPD3_DES_GPIO_23		0x1e
 
@@ -34,7 +33,6 @@
 #define FPD3_SER_SLAVE_AL0		0x08
 
 #define FPD3_SER_GN_STS			0x0c
-	#define SIGNAL_DETECT	(1<<1)
 #define FPD3_SER_GPIO_01		0x0d
 #define FPD3_SER_GPIO_23		0x0e
 
@@ -47,6 +45,8 @@
 #define GPIO_SHIFT_VAL	1
 #define GPIO_DIR_INPUT	1
 #define GPIO_DIR_OUTPUT	0
+
+#define SIGNAL_DETECT			(1<<0)
 
 #define FPD3_MAX_POLL_COUNT		100
 #define FPD3_SERDES_MAX_SLAVES		10

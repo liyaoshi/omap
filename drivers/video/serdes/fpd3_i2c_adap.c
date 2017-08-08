@@ -200,6 +200,7 @@ static int fpd3_master_xfer(struct i2c_adapter *adap,
 	struct i2c_msg new_msg;
 	u8 alias_addr;
 	int i, ret = 0;
+	int num_tred = 0;
 
 	if (setup_link(adap))
 		return -EIO;
@@ -218,11 +219,16 @@ static int fpd3_master_xfer(struct i2c_adapter *adap,
 		new_msg.addr = alias_addr;
 		/* Issue the messages on the alias adapter */
 		ret = i2c_transfer(alias_adap, &new_msg, 1);
-		if (ret)
+		if (ret < 0)
 			break;
+		else
+			num_tred++;
 	}
 
-	return ret;
+	if (ret < 0)
+		return ret;
+	else
+		return num_tred;
 }
 
 static int fpd3_smbus_xfer(struct i2c_adapter *adap, u16 addr,
