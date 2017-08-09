@@ -500,6 +500,7 @@ dtb-$(CONFIG_SOC_DRA7XX) += \
 	dra7-evm-lcd-osd.dtb \
 	dra7-evm-lcd-osd101t2587.dtb \
 	dra7-evm-lcd-osd-late-attach.dtb \
+	dra7-evm-fpd-auo-g101evn01.0.dtb \
 	dra7-evm-vision.dtb \
 	am57xx-beagle-x15.dtb \
 	am57xx-beagle-x15-revb1.dtb \
