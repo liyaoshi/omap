@@ -33,6 +33,7 @@ Required Properties:
     - "ti,ds90uh925q": For TI FPDlink3 24bit video serializer
     - "ti,ds90uh928q": For TI FPDlink3 24bit video de serializer
     - "ti,ds90ub924q": For TI FPDlink3 24bit video de serializer
+    - "ti,ds90ub921q": For TI FPDlink3 24bit video serializer
 
   - reg: I2C slave address
 	This would be the alias adress for remote device. The CPU side
