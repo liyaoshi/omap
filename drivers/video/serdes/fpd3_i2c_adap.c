@@ -100,8 +100,10 @@ static int fpd3_serdes_setup_aliases(struct i2c_client *client)
 		count++;
 	}
 
-	if (count >= FPD3_MAX_POLL_COUNT)
+	if (count >= FPD3_MAX_POLL_COUNT) {
+		dev_err(&client->dev, "Unable to sync with remote slave");
 		return -EIO;
+	}
 
 	dev_dbg(&client->dev, "Remote signal detected");
 	return 0;
