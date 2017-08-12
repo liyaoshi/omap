@@ -104,7 +104,7 @@ static void sync_print_pt(struct seq_file *s, struct sync_pt *pt, bool fence)
 
 	if (parent->ops->timeline_value_str &&
 	    parent->ops->pt_value_str) {
-		char value[64];
+		char value[256];
 
 		parent->ops->pt_value_str(pt, value, sizeof(value));
 		seq_printf(s, ": %s", value);
@@ -226,7 +226,7 @@ static __init int sync_debugfs_init(void)
 late_initcall(sync_debugfs_init);
 
 #define DUMP_CHUNK 256
-static char sync_dump_buf[64 * 1024];
+static char sync_dump_buf[256 * 1024];
 void sync_dump(void)
 {
 	struct seq_file s = {
