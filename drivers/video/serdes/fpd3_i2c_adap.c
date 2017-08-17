@@ -100,8 +100,10 @@ static int fpd3_serdes_setup_aliases(struct i2c_client *client)
 		count++;
 	}
 
-	if (count >= FPD3_MAX_POLL_COUNT)
+	if (count >= FPD3_MAX_POLL_COUNT) {
+		dev_err(&client->dev, "Unable to sync with remote slave");
 		return -EIO;
+	}
 
 	dev_dbg(&client->dev, "Remote signal detected");
 	return 0;
@@ -197,38 +199,36 @@ static int fpd3_master_xfer(struct i2c_adapter *adap,
 			struct i2c_msg msgs[], int num)
 {
 	struct i2c_adapter *alias_adap;
-	struct i2c_msg new_msg;
+	struct i2c_msg *new_msg;
 	u8 alias_addr;
 	int i, ret = 0;
-	int num_tred = 0;
 
 	if (setup_link(adap))
 		return -EIO;
 
 	alias_adap = __get_alias_adapter(adap);
 
+	new_msg = kcalloc(num, sizeof(*new_msg), GFP_KERNEL);
+
 	for (i = 0; i < num; i++) {
 		alias_addr = __get_alias_addr(adap, msgs[i].addr);
 		if (alias_addr == 0) {
 			ret = -EINVAL;
-			break;
+			goto cleanup;
 		}
 
 		/* Copy the i2c_msgs into temporary buffer; xlate address */
-		new_msg = msgs[i];
-		new_msg.addr = alias_addr;
-		/* Issue the messages on the alias adapter */
-		ret = i2c_transfer(alias_adap, &new_msg, 1);
-		if (ret < 0)
-			break;
-		else
-			num_tred++;
+		new_msg[i] = msgs[i];
+		new_msg[i].addr = alias_addr;
 	}
 
-	if (ret < 0)
-		return ret;
-	else
-		return num_tred;
+	/* Issue the messages on the alias adapter */
+	ret = i2c_transfer(alias_adap, new_msg, num);
+
+ cleanup:
+	kfree(new_msg);
+
+	return ret;
 }
 
 static int fpd3_smbus_xfer(struct i2c_adapter *adap, u16 addr,

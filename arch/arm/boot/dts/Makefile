@@ -494,11 +494,13 @@ dtb-$(CONFIG_SOC_OMAP5) += \
 dtb-$(CONFIG_SOC_DRA7XX) += \
 	dra7-evm.dtb \
 	dra7-evm-lcd-lg.dtb \
+	dra7-evm-fpd-lg.dtb \
 	dra7-evm-lcd-lg-late-attach.dtb \
 	dra7-evm-lcd-lg-late-attach-no-map.dtb \
 	dra7-evm-lcd-osd.dtb \
 	dra7-evm-lcd-osd101t2587.dtb \
 	dra7-evm-lcd-osd-late-attach.dtb \
+	dra7-evm-fpd-auo-g101evn01.0.dtb \
 	dra7-evm-vision.dtb \
 	am57xx-beagle-x15.dtb \
 	am57xx-beagle-x15-revb1.dtb \
@@ -514,6 +516,7 @@ dtb-$(CONFIG_SOC_DRA7XX) += \
 	dra72-evm-lcd-lg.dtb \
 	dra72-evm-lcd-osd.dtb \
 	dra72-evm-lcd-osd101t2587.dtb \
+	dra72-evm-fpd-lg.dtb \
 	dra72-evm-revc.dtb \
 	dra72-evm-revc-lcd-osd101t2045.dtb \
 	dra72-evm-revc-lcd-osd101t2587.dtb \

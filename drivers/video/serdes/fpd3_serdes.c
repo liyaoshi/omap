@@ -23,6 +23,8 @@
  * DS90UB913aq/DS90UB914aq http://www.ti.com/lit/ds/snls443a/snls443a.pdf
  * DS90UH925Q http://www.ti.com/lit/ds/symlink/ds90uh925q-q1.pdf
  * DS90UH928Q http://www.ti.com/lit/ds/snls440a/snls440a.pdf
+ * DS90UB924Q http://www.ti.com/lit/ds/snls512/snls512.pdf
+ * DS90UB921Q http://www.ti.com/lit/ds/symlink/ds90ub921-q1.pdf
  *
  * Documentation:-
  * -> Documentation/video-serdes.txt
@@ -78,6 +80,20 @@ static const unsigned int fpd3_24bit_des_init[] = {
 	FPD3_DES_CONFIG1,	0x4c,
 };
 
+static const unsigned int fpd3_921_ser_init[] = {
+	/* Reset entire digital block except registers */
+	FPD3_SER_RESET,		0x01,
+	/* back chan en, auto ack WR, i2c passthrough, rising edge pclk */
+	FPD3_SER_CONFIG1,	0x8b,
+};
+
+static const unsigned int fpd3_924_des_init[] = {
+	/* digital reset1 */
+	FPD3_DES_RESET,		0x02,
+	/* back channel en */
+	FPD3_DES_RESET,		0x04,
+};
+
 static struct fpd3_serdes_platform_data fpd3_serdes_pdata[] = {
 	{
 		.name = "fpd3_12b_ser",
@@ -118,6 +134,26 @@ static struct fpd3_serdes_platform_data fpd3_serdes_pdata[] = {
 		.gpio_2reg = 2 * FPD3_DES_GPIO_01 + 1,
 		.init_seq = fpd3_24bit_des_init,
 		.init_len = ARRAY_SIZE(fpd3_24bit_des_init),
+	},
+	{
+		.name = "fpd3_924_des",
+		.dev_type = FPD3_DES_DEV,
+		.ngpio = 4,
+		.nslaves = 8,
+		.device_id = 0x58,
+		.gpio_2reg = 2 * FPD3_DES_GPIO_01 + 1,
+		.init_seq = fpd3_924_des_init,
+		.init_len = ARRAY_SIZE(fpd3_924_des_init),
+	},
+	{
+		.name = "fpd3_921_ser",
+		.dev_type = FPD3_SER_DEV,
+		.ngpio = 4,
+		.nslaves = 1,
+		.device_id = 0x18,
+		.gpio_2reg = 2 * FPD3_SER_GPIO_01 + 1,
+		.init_seq = fpd3_921_ser_init,
+		.init_len = ARRAY_SIZE(fpd3_921_ser_init),
 	},
 };
 
@@ -309,6 +345,8 @@ static const struct i2c_device_id fpd3_serdes_i2c_ids[] = {
 	{ "ds90ub914aq", 8 },
 	{ "ds90uh925q", 8 },
 	{ "ds90uh928q", 8 },
+	{ "ds90ub924q", 8 },
+	{ "ds90ub921q", 8 },
 	{ }
 };
 MODULE_DEVICE_TABLE(i2c, fpd3_serdes_i2c_ids);
@@ -318,6 +356,8 @@ static const struct of_device_id fpd3_serdes_dt_ids[] = {
 	{.compatible = "ti,ds90ub914aq", &fpd3_serdes_pdata[1], },
 	{.compatible = "ti,ds90uh925q", &fpd3_serdes_pdata[2], },
 	{.compatible = "ti,ds90uh928q", &fpd3_serdes_pdata[3], },
+	{.compatible = "ti,ds90ub924q", &fpd3_serdes_pdata[4], },
+	{.compatible = "ti,ds90ub921q", &fpd3_serdes_pdata[5], },
 	{ }
 };
 

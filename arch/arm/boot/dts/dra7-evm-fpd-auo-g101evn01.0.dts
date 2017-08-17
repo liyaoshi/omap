@@ -1,0 +1,37 @@
+#include "dra7-evm.dts"
+#include "dra7x-evm-fpd-auo-g101evn01.0.dtsi"
+
+/ {
+	aliases {
+		display0 = &fpd_disp;
+		display1 = &hdmi0;
+	};
+};
+
+&dss {
+	ports {
+		status = "ok";
+	};
+};
+
+&disp_ser {
+	status = "ok";
+	ranges = <0x0 0x2d>;
+};
+
+/* Tie the end points of DSS and FPDLink together */
+
+&fpd_in {
+	remote-endpoint = <&dpi_out3>;
+};
+
+&dpi_out3 {
+	remote-endpoint = <&fpd_in>;
+};
+
+&lcd_fpd {
+	enable-gpios = <&pcf_gpio_21 0 GPIO_ACTIVE_LOW>;
+	/* P0, SEL_GPMC_AD_VID_S0 */
+
+	status = "ok";
+};

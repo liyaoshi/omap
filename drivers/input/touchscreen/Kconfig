@@ -325,6 +325,7 @@ config TOUCHSCREEN_GOODIX
 	tristate "Goodix I2C touchscreen"
 	depends on I2C
 	depends on GPIOLIB
+	select INPUT_POLLDEV
 	help
 	  Say Y here if you have the Goodix touchscreen (such as one
 	  installed in Onda v975w tablets) connected to your

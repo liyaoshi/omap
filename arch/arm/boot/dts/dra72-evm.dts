@@ -11,7 +11,6 @@
 
 	aliases {
 		display0 = &hdmi0;
-		display1 = &fpd_disp;
 		sound1 = &hdmi;
 		i2c7 = &disp_ser;
 	};

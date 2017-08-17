@@ -10,7 +10,6 @@
 	aliases {
 		display0 = &lcd;
 		display1 = &hdmi0;
-		display2 = &fpd_disp;
 	};
 
 	lcd_bl: backlight {

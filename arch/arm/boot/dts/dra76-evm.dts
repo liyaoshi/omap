@@ -54,6 +54,10 @@
 		};
 	};
 
+	aliases {
+		i2c7 = &disp_ser;
+	};
+
 	vsys_12v0: fixedregulator-vsys12v0 {
 		/* main supply */
 		compatible = "regulator-fixed";
@@ -474,9 +478,35 @@
 	phy-supply = <&ldo3_reg>;
 };
 
+&i2c3 {
+	disp_ser: serializer@0c {
+		compatible = "ti,ds90ub921q";
+		reg = <0x0c>;
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+	};
+};
+
 &dss {
 	status = "ok";
 	vdda_video-supply = <&ldo5_reg>;
+
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		status = "disabled";
+
+		port@lcd3 {
+			reg = <2>;
+
+			dpi_out3: endpoint {
+				data-lines = <24>;
+			};
+		};
+	};
 };
 
 &hdmi {
