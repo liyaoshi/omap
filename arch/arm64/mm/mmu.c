@@ -440,14 +440,14 @@ void mark_rodata_ro(void)
 {
 	unsigned long section_size;
 
-	section_size = (unsigned long)__start_rodata - (unsigned long)_text;
-	create_mapping_late(__pa(_text), (unsigned long)_text,
+	section_size = (unsigned long)_etext - (unsigned long)_stext;
+	create_mapping_late(__pa(_stext), (unsigned long)_stext,
 			    section_size, PAGE_KERNEL_ROX);
 	/*
-	 * mark .rodata as read only. Use _etext rather than __end_rodata to
-	 * cover NOTES and EXCEPTION_TABLE.
+	 * mark .rodata as read only. Use __init_begin rather than __end_rodata
+	 * to cover NOTES and EXCEPTION_TABLE.
 	 */
-	section_size = (unsigned long)_etext - (unsigned long)__start_rodata;
+	section_size = (unsigned long)__init_begin - (unsigned long)__start_rodata;
 	create_mapping_late(__pa(__start_rodata), (unsigned long)__start_rodata,
 			    section_size, PAGE_KERNEL_RO);
 }
@@ -490,7 +490,7 @@ static void __init map_kernel(pgd_t *pgd)
 {
 	static struct vm_struct vmlinux_text, vmlinux_rodata, vmlinux_init, vmlinux_data;
 
-	map_kernel_segment(pgd, _text, __start_rodata, PAGE_KERNEL_EXEC, &vmlinux_text);
+	map_kernel_segment(pgd, _text, _etext, PAGE_KERNEL_EXEC, &vmlinux_text);
 	map_kernel_segment(pgd, __start_rodata, _etext, PAGE_KERNEL, &vmlinux_rodata);
 	map_kernel_segment(pgd, __init_begin, __init_end, PAGE_KERNEL_EXEC,
 			   &vmlinux_init);

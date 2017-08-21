@@ -85,6 +85,16 @@
 #endif
 
 /*
+ * The size of the KASAN shadow region. This should be 1/8th of the
+ * size of the entire kernel virtual address space.
+ */
+#ifdef CONFIG_KASAN
+#define KASAN_SHADOW_SIZE	(UL(1) << (VA_BITS - 3))
+#else
+#define KASAN_SHADOW_SIZE	(0)
+#endif
+
+/*
  * Physical vs virtual RAM address space conversion.  These are
  * private definitions which should NOT be used outside memory.h
  * files.  Use virt_to_phys/phys_to_virt/__pa/__va instead.
@@ -196,7 +206,11 @@ static inline void *phys_to_virt(phys_addr_t x)
 #define ARCH_PFN_OFFSET		((unsigned long)PHYS_PFN_OFFSET)
 
 #define virt_to_page(kaddr)	pfn_to_page(__pa(kaddr) >> PAGE_SHIFT)
-#define	virt_addr_valid(kaddr)	pfn_valid(__pa(kaddr) >> PAGE_SHIFT)
+#define _virt_addr_valid(kaddr)	pfn_valid(__pa(kaddr) >> PAGE_SHIFT)
+
+#define _virt_addr_is_linear(kaddr)	(((u64)(kaddr)) >= PAGE_OFFSET)
+#define virt_addr_valid(kaddr)		(_virt_addr_is_linear(kaddr) && \
+					 _virt_addr_valid(kaddr))
 
 #endif
 
