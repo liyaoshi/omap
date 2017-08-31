@@ -574,13 +574,6 @@ struct rpmsg_channel *__rpmsg_create_channel(struct virtproc_info *vrp,
 		return NULL;
 	}
 
-	if (!rpdev->ept) {
-		dev_err(dev, "failed to create ept\n");
-		device_unregister(&rpdev->dev);
-		put_device(&rpdev->dev);
-		return NULL;
-	}
-
 	return rpdev;
 }
 
