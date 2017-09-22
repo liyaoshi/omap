@@ -43,7 +43,7 @@
 			device_type = "cpu";
 			compatible = "arm,cortex-a15";
 			reg = <0x0>;
-
+			clock-frequency = <1500000000>;
 			operating-points = <
 				/* kHz    uV */
 				1000000 1060000
@@ -64,6 +64,7 @@
 			device_type = "cpu";
 			compatible = "arm,cortex-a15";
 			reg = <0x1>;
+			clock-frequency = <1500000000>;
 		};
 	};
 
@@ -403,6 +404,7 @@
 			#interrupt-cells = <2>;
 			gpio-controller;
 			#gpio-cells = <2>;
+			status = "disabled";
 		};
 
 		i2c1: i2c@48070000 {
@@ -998,6 +1000,7 @@
 				clocks = <&sys_clkin>, <&sata_ref_clk>;
 				clock-names = "sysclk", "refclk";
 				#phy-cells = <0>;
+				status = "disabled";
 			};
 		};
 
@@ -1010,7 +1013,20 @@
 			clocks = <&sata_ref_clk>;
 			ti,hwmods = "sata";
 			ports-implemented = <0x1>;
+			status = "disabled";
 		};
+
+                gpu: gpu@56000000 {
+                        compatible = "ti,dra7-sgx544", "img,sgx544";
+                        reg = <0x56000000 0x10000>;
+                        reg-names = "gpu_ocp_base";
+                        interrupts = <GIC_SPI 21 IRQ_TYPE_LEVEL_HIGH>;
+                        ti,hwmods = "gpu";
+                        clocks = <&l3_iclk_div>, <&gpu_core_gclk_mux>,
+                                <&gpu_hyd_gclk_mux>;
+                        clock-names = "iclk", "fclk1", "fclk2";
+                };
+
 
 		dss: dss@58000000 {
 			compatible = "ti,omap5-dss";

@@ -639,7 +639,8 @@ void __init omap5xxx_check_revision(void)
 		omap_revision = OMAP5430_REV_ES2_0;
 	}
 
-	sprintf(soc_name, "OMAP%04x", omap_rev() >> 16);
+//	sprintf(soc_name, "OMAP%04x", omap_rev() >> 16);
+	memcpy(soc_name,"DRA752",6);
 	sprintf(soc_rev, "ES%d.0", (omap_rev() >> 12) & 0xf);
 
 	pr_info("%s %s\n", soc_name, soc_rev);
