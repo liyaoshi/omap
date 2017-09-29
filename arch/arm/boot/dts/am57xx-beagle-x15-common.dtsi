@@ -10,7 +10,6 @@
 #include "dra74x.dtsi"
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/interrupt-controller/irq.h>
-#include "dra7xx-android-fstab.dtsi"
 
 / {
 	model = "TI AM5728 BeagleBoard-X15";
