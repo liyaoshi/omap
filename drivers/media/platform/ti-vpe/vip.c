@@ -336,6 +336,11 @@ static bool vip_is_mbuscode_rgb(u32 code)
 	return ((code & 0xFF00) == 0x1000);
 }
 
+static bool vip_is_mbuscode_raw(u32 code)
+{
+	return ((code & 0xFF00) == 0x3000);
+}
+
 static enum  v4l2_colorspace vip_fourcc_to_colorspace(u32 fourcc)
 {
 	if (vip_is_fmt_rgb(fourcc))
@@ -1675,6 +1680,7 @@ static int vip_try_fmt_vid_cap(struct file *file, void *priv,
 
 	if (is_scaler_available(port) &&
 	    csc_direction != VIP_CSC_Y2R &&
+	    !vip_is_mbuscode_raw(fmt->code) &&
 	    f->fmt.pix.height <= port->try_mbus_framefmt.height &&
 	    port->try_mbus_framefmt.height <= SC_MAX_PIXEL_HEIGHT &&
 	    port->try_mbus_framefmt.width <= SC_MAX_PIXEL_WIDTH) {
@@ -1871,18 +1877,158 @@ static int vip_s_fmt_vid_cap(struct file *file, void *priv,
 	return 0;
 }
 
-static void vip_disable_sc_path(struct vip_stream *stream)
+/*
+ * Does the exact opposite of set_fmt_params
+ * It makes sure the DataPath register is sane after tear down
+ */
+static void unset_fmt_params(struct vip_stream *stream)
 {
 	struct vip_dev *dev = stream->port->dev;
 	struct vip_port *port = stream->port;
 
-	vip_dbg(3, dev, "%s:\n", __func__);
+	stream->sequence = 0;
+	stream->field = V4L2_FIELD_TOP;
 
-	if (port->scaler)
-		vip_set_slice_path(dev, VIP_SC_SRC_DATA_SELECT, 0);
+	if (port->csc == VIP_CSC_Y2R) {
+		if (port->port_id == VIP_PORTA) {
+			vip_set_slice_path(dev, VIP_CSC_SRC_DATA_SELECT, 0);
+			vip_set_slice_path(dev,
+					   VIP_MULTI_CHANNEL_DATA_SELECT, 0);
+			vip_set_slice_path(dev, VIP_RGB_OUT_HI_DATA_SELECT, 0);
+			vip_set_slice_path(dev, VIP_RGB_SRC_DATA_SELECT, 0);
+		} else {
+			vip_set_slice_path(dev, VIP_CSC_SRC_DATA_SELECT, 0);
+			vip_set_slice_path(dev,
+					   VIP_MULTI_CHANNEL_DATA_SELECT, 0);
+			vip_set_slice_path(dev, VIP_RGB_OUT_LO_DATA_SELECT, 0);
+		}
+		/* We are done */
+		return;
+	} else if (port->csc == VIP_CSC_R2Y) {
+		if (port->scaler && port->fmt->coplanar) {
+			if (port->port_id == VIP_PORTA) {
+				vip_set_slice_path(dev,
+						   VIP_CSC_SRC_DATA_SELECT, 0);
+				vip_set_slice_path(dev,
+						   VIP_SC_SRC_DATA_SELECT, 0);
+				vip_set_slice_path(dev,
+						   VIP_CHR_DS_1_SRC_DATA_SELECT,
+						   0);
+				vip_set_slice_path(dev,
+						   VIP_CHR_DS_1_DATA_BYPASS, 0);
+				vip_set_slice_path(dev,
+						   VIP_RGB_OUT_HI_DATA_SELECT,
+						   0);
+			}
+		} else if (port->scaler) {
+			if (port->port_id == VIP_PORTA) {
+				vip_set_slice_path(dev,
+						   VIP_CSC_SRC_DATA_SELECT, 0);
+				vip_set_slice_path(dev,
+						   VIP_SC_SRC_DATA_SELECT, 0);
+				vip_set_slice_path(dev,
+						   VIP_CHR_DS_1_SRC_DATA_SELECT,
+						   0);
+				vip_set_slice_path(dev,
+						   VIP_CHR_DS_1_DATA_BYPASS, 0);
+				vip_set_slice_path(dev,
+						   VIP_RGB_OUT_HI_DATA_SELECT,
+						   0);
+			}
+		} else if (port->fmt->coplanar) {
+			if (port->port_id == VIP_PORTA) {
+				vip_set_slice_path(dev,
+						   VIP_CSC_SRC_DATA_SELECT, 0);
+				vip_set_slice_path(dev,
+						   VIP_CHR_DS_1_SRC_DATA_SELECT,
+						   0);
+				vip_set_slice_path(dev,
+						   VIP_CHR_DS_1_DATA_BYPASS, 0);
+				vip_set_slice_path(dev,
+						   VIP_RGB_OUT_HI_DATA_SELECT,
+						   0);
+			}
+		} else {
+			if (port->port_id == VIP_PORTA) {
+				vip_set_slice_path(dev,
+						   VIP_CSC_SRC_DATA_SELECT, 0);
+				vip_set_slice_path(dev,
+						   VIP_CHR_DS_1_SRC_DATA_SELECT,
+						   0);
+				vip_set_slice_path(dev,
+						   VIP_CHR_DS_1_DATA_BYPASS, 0);
+				vip_set_slice_path(dev,
+						   VIP_RGB_OUT_HI_DATA_SELECT,
+						   0);
+			}
+		}
+		/* We are done */
+		return;
+	} else if (vip_is_fmt_rgb(port->fmt->fourcc)) {
+		if (port->port_id == VIP_PORTA) {
+			vip_set_slice_path(dev,
+					   VIP_MULTI_CHANNEL_DATA_SELECT, 0);
+			vip_set_slice_path(dev, VIP_RGB_OUT_LO_DATA_SELECT, 0);
+		}
+		/* We are done */
+		return;
+	}
 
-	if (port->csc != VIP_CSC_NA)
-		vip_set_slice_path(dev, VIP_CSC_SRC_DATA_SELECT, 0);
+	if (port->scaler && port->fmt->coplanar) {
+		if (port->port_id == VIP_PORTA) {
+			vip_set_slice_path(dev, VIP_SC_SRC_DATA_SELECT, 0);
+			vip_set_slice_path(dev,
+					   VIP_CHR_DS_1_SRC_DATA_SELECT, 0);
+			vip_set_slice_path(dev, VIP_CHR_DS_1_DATA_BYPASS, 0);
+			vip_set_slice_path(dev, VIP_RGB_OUT_HI_DATA_SELECT, 0);
+		} else {
+			vip_set_slice_path(dev, VIP_SC_SRC_DATA_SELECT, 0);
+			vip_set_slice_path(dev,
+					   VIP_CHR_DS_2_SRC_DATA_SELECT, 0);
+			vip_set_slice_path(dev, VIP_CHR_DS_1_DATA_BYPASS, 0);
+			vip_set_slice_path(dev, VIP_RGB_OUT_LO_DATA_SELECT, 0);
+			vip_set_slice_path(dev,
+					   VIP_MULTI_CHANNEL_DATA_SELECT, 0);
+		}
+	} else if (port->scaler) {
+		if (port->port_id == VIP_PORTA) {
+			vip_set_slice_path(dev, VIP_SC_SRC_DATA_SELECT, 0);
+			vip_set_slice_path(dev,
+					   VIP_CHR_DS_1_SRC_DATA_SELECT, 0);
+			vip_set_slice_path(dev, VIP_CHR_DS_1_DATA_BYPASS, 0);
+			vip_set_slice_path(dev, VIP_RGB_OUT_HI_DATA_SELECT, 0);
+		} else {
+			vip_set_slice_path(dev, VIP_SC_SRC_DATA_SELECT, 0);
+			vip_set_slice_path(dev,
+					   VIP_CHR_DS_2_SRC_DATA_SELECT, 0);
+			vip_set_slice_path(dev, VIP_CHR_DS_1_DATA_BYPASS, 0);
+			vip_set_slice_path(dev, VIP_CHR_DS_2_DATA_BYPASS, 0);
+			vip_set_slice_path(dev, VIP_RGB_OUT_HI_DATA_SELECT, 0);
+		}
+	} else if (port->fmt->coplanar) {
+		if (port->port_id == VIP_PORTA) {
+			vip_set_slice_path(dev,
+					   VIP_CHR_DS_1_SRC_DATA_SELECT, 0);
+			vip_set_slice_path(dev, VIP_CHR_DS_1_DATA_BYPASS, 0);
+			vip_set_slice_path(dev, VIP_RGB_OUT_HI_DATA_SELECT, 0);
+		} else {
+			vip_set_slice_path(dev,
+					   VIP_CHR_DS_2_SRC_DATA_SELECT, 0);
+			vip_set_slice_path(dev, VIP_CHR_DS_2_DATA_BYPASS, 0);
+			vip_set_slice_path(dev,
+					   VIP_MULTI_CHANNEL_DATA_SELECT, 0);
+			vip_set_slice_path(dev, VIP_RGB_OUT_LO_DATA_SELECT, 0);
+		}
+	} else {
+		/*
+		 * We undo all data path setting except for the multi
+		 * stream case.
+		 * Because we cannot disrupt other on-going capture if only
+		 * one stream is terminated the other might still be going
+		 */
+		vip_set_slice_path(dev, VIP_MULTI_CHANNEL_DATA_SELECT, 1);
+		vip_set_slice_path(dev, VIP_RGB_OUT_LO_DATA_SELECT, 0);
+	}
 }
 
 /*
@@ -2559,7 +2705,7 @@ static void vip_stop_streaming(struct vb2_queue *vq)
 
 	vip_parser_stop_imm(port, true);
 	vip_enable_parser(port, false);
-	vip_disable_sc_path(stream);
+	unset_fmt_params(stream);
 
 	disable_irqs(dev, dev->slice_id, stream->list_num);
 	clear_irqs(dev, dev->slice_id, stream->list_num);
@@ -2625,7 +2771,7 @@ done:
 
 static inline bool is_scaler_available(struct vip_port *port)
 {
-	if (port->num_streams_configured == 1)
+	if (port->endpoint->bus_type == V4L2_MBUS_PARALLEL)
 		if (port->dev->sc_assigned == VIP_NOT_ASSIGNED ||
 		    port->dev->sc_assigned == port->port_id)
 			return true;
@@ -2634,7 +2780,7 @@ static inline bool is_scaler_available(struct vip_port *port)
 
 static inline bool allocate_scaler(struct vip_port *port)
 {
-	if (port->num_streams_configured == 1) {
+	if (is_scaler_available(port)) {
 		if (port->dev->sc_assigned == VIP_NOT_ASSIGNED ||
 		    port->dev->sc_assigned == port->port_id) {
 			port->dev->sc_assigned = port->port_id;
@@ -2655,7 +2801,7 @@ static inline void free_scaler(struct vip_port *port)
 
 static bool is_csc_available(struct vip_port *port)
 {
-	if (port->num_streams_configured == 1)
+	if (port->endpoint->bus_type == V4L2_MBUS_PARALLEL)
 		if (port->dev->csc_assigned == VIP_NOT_ASSIGNED ||
 		    port->dev->csc_assigned == port->port_id)
 			return true;
@@ -2789,6 +2935,8 @@ static int vip_init_stream(struct vip_stream *stream)
 
 	fmt = port->fmt;
 	mbus_fmt = &port->mbus_framefmt;
+
+	memset(&f, 0, sizeof(f));
 
 	/* Properly calculate the sizeimage and bytesperline values. */
 	v4l2_fill_pix_format(&f.fmt.pix, mbus_fmt);
@@ -3292,32 +3440,43 @@ static int get_subdev_active_format(struct vip_port *port,
 	struct v4l2_subdev_mbus_code_enum mbus_code;
 	int ret = 0;
 	unsigned int k, i, j;
+	enum vip_csc_state csc;
 
 	/* Enumerate sub device formats and enable all matching local formats */
 	port->num_active_fmt = 0;
-	for (k = 0, i = 0;
-	     (ret != -EINVAL);
-	     k++) {
+	for (k = 0, i = 0; (ret != -EINVAL); k++) {
 		memset(&mbus_code, 0, sizeof(mbus_code));
 		mbus_code.index = k;
 		ret = v4l2_subdev_call(subdev, pad, enum_mbus_code,
 				       NULL, &mbus_code);
-		if (ret == 0) {
-			vip_dbg(2, dev,
-				"subdev %s: code: %04x idx: %d\n",
-				subdev->name, mbus_code.code, k);
+		if (ret)
+			continue;
 
-			for (j = 0; j < ARRAY_SIZE(vip_formats); j++) {
-				fmt = &vip_formats[j];
-				if (mbus_code.code == fmt->code) {
-					port->active_fmt[i] = fmt;
-					vip_dbg(2, dev,
-						"matched fourcc: %s: code: %04x idx: %d\n",
-						fourcc_to_str(fmt->fourcc),
-						fmt->code, i);
-					port->num_active_fmt = ++i;
-				}
-			}
+		vip_dbg(2, dev,
+			"subdev %s: code: %04x idx: %d\n",
+			subdev->name, mbus_code.code, k);
+
+		for (j = 0; j < ARRAY_SIZE(vip_formats); j++) {
+			fmt = &vip_formats[j];
+			if (mbus_code.code != fmt->code)
+				continue;
+
+			/*
+			 * When the port is configured for BT656
+			 * then none of the downstream unit can be used.
+			 * So here we need to skip all format requiring
+			 * either CSC or CHR_DS
+			 */
+			csc = vip_csc_direction(fmt->code, fmt->fourcc);
+			if (port->endpoint->bus_type == V4L2_MBUS_BT656 &&
+			    (csc != VIP_CSC_NA || fmt->coplanar))
+				continue;
+
+			port->active_fmt[i] = fmt;
+			vip_dbg(2, dev,
+				"matched fourcc: %s: code: %04x idx: %d\n",
+				fourcc_to_str(fmt->fourcc), fmt->code, i);
+			port->num_active_fmt = ++i;
 		}
 	}
 

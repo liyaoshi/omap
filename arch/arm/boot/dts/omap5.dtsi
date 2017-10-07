@@ -175,6 +175,7 @@
 					reg = <0x40 0x01b6>;
 					#address-cells = <1>;
 					#size-cells = <0>;
+					#pinctrl-cells = <1>;
 					#interrupt-cells = <1>;
 					interrupt-controller;
 					pinctrl-single,register-width = <16>;
@@ -196,7 +197,7 @@
 						pbias_mmc_reg: pbias_mmc_omap5 {
 							regulator-name = "pbias_mmc_omap5";
 							regulator-min-microvolt = <1800000>;
-							regulator-max-microvolt = <3000000>;
+							regulator-max-microvolt = <3300000>;
 						};
 					};
 				};
@@ -274,6 +275,7 @@
 				reg = <0xc840 0x003c>;
 				#address-cells = <1>;
 				#size-cells = <0>;
+				#pinctrl-cells = <1>;
 				#interrupt-cells = <1>;
 				interrupt-controller;
 				pinctrl-single,register-width = <16>;

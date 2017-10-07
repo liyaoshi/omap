@@ -450,8 +450,6 @@
 
 		dcdc3: regulator-dcdc3 {
 			regulator-name = "vdcdc3";
-			regulator-min-microvolt = <1500000>;
-			regulator-max-microvolt = <1500000>;
 			regulator-boot-on;
 			regulator-always-on;
 		};
@@ -589,6 +587,7 @@
 		interrupts = <0 IRQ_TYPE_NONE>, /* fifoevent */
 			     <1 IRQ_TYPE_NONE>;	/* termcount */
 		rb-gpios = <&gpmc 0 GPIO_ACTIVE_HIGH>;	/* gpmc_wait0 */
+		ti,nand-xfer-type = "prefetch-dma";
 		ti,nand-ecc-opt = "bch16";
 		ti,elm-id = <&elm>;
 		nand-bus-width = <8>;
@@ -823,4 +822,8 @@
 
 &wkup_m3_ipc {
 	ti,scale-data-fw = "am43x-evm-scale-data.bin";
+};
+
+&cpu {
+	cpu0-supply = <&dcdc2>;
 };

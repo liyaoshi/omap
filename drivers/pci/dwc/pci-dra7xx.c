@@ -11,6 +11,7 @@
  */
 
 #include <linux/delay.h>
+#include <linux/device.h>
 #include <linux/err.h>
 #include <linux/interrupt.h>
 #include <linux/irq.h>
@@ -20,6 +21,7 @@
 #include <linux/of_device.h>
 #include <linux/of_gpio.h>
 #include <linux/of_pci.h>
+#include <linux/of_platform.h>
 #include <linux/pci.h>
 #include <linux/phy/phy.h>
 #include <linux/platform_device.h>
@@ -82,6 +84,9 @@
 #define MSI_REQ_GRANT					BIT(0)
 #define MSI_VECTOR_SHIFT				7
 
+#define PCIE_1LANE_2LANE_SELECTION			BIT(13)
+#define PCIE_B1C0_MODE_SEL				BIT(2)
+
 struct dra7xx_pcie {
 	struct dw_pcie		*pci;
 	void __iomem		*base;		/* DT ti_conf */
@@ -94,6 +99,10 @@ struct dra7xx_pcie {
 
 struct dra7xx_pcie_of_data {
 	enum dw_pcie_device_mode mode;
+	u32 b1co_mode_sel_mask;
+};
+
+struct dra7xx_pcie_data {
 };
 
 #define to_dra7xx_pcie(x)	dev_get_drvdata((x)->dev)
@@ -335,10 +344,23 @@ static irqreturn_t dra7xx_pcie_irq_handler(int irq, void *arg)
 	return IRQ_HANDLED;
 }
 
+static void dw_pcie_ep_reset_bar(struct dw_pcie *pci, enum pci_barno bar)
+{
+	u32 reg;
+
+	reg = PCI_BASE_ADDRESS_0 + (4 * bar);
+	dw_pcie_writel_dbi2(pci, reg, 0x0);
+	dw_pcie_writel_dbi(pci, reg, 0x0);
+}
+
 static void dra7xx_pcie_ep_init(struct dw_pcie_ep *ep)
 {
 	struct dw_pcie *pci = to_dw_pcie_from_ep(ep);
 	struct dra7xx_pcie *dra7xx = to_dra7xx_pcie(pci);
+	enum pci_barno bar;
+
+	for (bar = BAR_0; bar <= BAR_5; bar++)
+		dw_pcie_ep_reset_bar(pci, bar);
 
 	dra7xx_pcie_enable_wrapper_interrupts(dra7xx);
 }
@@ -521,6 +543,16 @@ static const struct dra7xx_pcie_of_data dra7xx_pcie_ep_of_data = {
 	.mode = DW_PCIE_EP_TYPE,
 };
 
+static const struct dra7xx_pcie_of_data dra746_pcie_rc_of_data = {
+	.b1co_mode_sel_mask = BIT(2),
+	.mode = DW_PCIE_RC_TYPE,
+};
+
+static const struct dra7xx_pcie_of_data dra746_pcie_ep_of_data = {
+	.b1co_mode_sel_mask = BIT(2),
+	.mode = DW_PCIE_EP_TYPE,
+};
+
 static const struct of_device_id of_dra7xx_pcie_match[] = {
 	{
 		.compatible = "ti,dra7-pcie",
@@ -528,6 +560,22 @@ static const struct of_device_id of_dra7xx_pcie_match[] = {
 	},
 	{
 		.compatible = "ti,dra7-pcie-ep",
+		.data = &dra7xx_pcie_ep_of_data,
+	},
+	{
+		.compatible = "ti,dra746-pcie-rc",
+		.data = &dra746_pcie_rc_of_data,
+	},
+	{
+		.compatible = "ti,dra746-pcie-ep",
+		.data = &dra746_pcie_ep_of_data,
+	},
+	{
+		.compatible = "ti,dra726-pcie-rc",
+		.data = &dra7xx_pcie_rc_of_data,
+	},
+	{
+		.compatible = "ti,dra726-pcie-ep",
 		.data = &dra7xx_pcie_ep_of_data,
 	},
 	{},
@@ -575,6 +623,44 @@ static int dra7xx_pcie_ep_legacy_mode(struct device *dev)
 	return ret;
 }
 
+static int dra7xx_pcie_configure_two_lane(struct device *dev,
+					  u32 b1co_mode_sel_mask)
+{
+	struct device_node *np = dev->of_node;
+	struct regmap *pcie_syscon;
+	unsigned int pcie_reg;
+
+	pcie_syscon = syscon_regmap_lookup_by_phandle(np, "syscon-lane-conf");
+	if (IS_ERR(pcie_syscon)) {
+		dev_err(dev, "unable to get syscon-lane-conf\n");
+		return -EINVAL;
+	}
+
+	if (of_property_read_u32_index(np, "syscon-lane-conf", 1, &pcie_reg)) {
+		dev_err(dev, "couldn't get lane configuration reg offset\n");
+		return -EINVAL;
+	}
+
+	regmap_update_bits(pcie_syscon, pcie_reg, PCIE_1LANE_2LANE_SELECTION,
+			   PCIE_1LANE_2LANE_SELECTION);
+
+	pcie_syscon = syscon_regmap_lookup_by_phandle(np, "syscon-lane-sel");
+	if (IS_ERR(pcie_syscon)) {
+		dev_err(dev, "unable to get syscon-lane-sel\n");
+		return -EINVAL;
+	}
+
+	if (of_property_read_u32_index(np, "syscon-lane-sel", 1, &pcie_reg)) {
+		dev_err(dev, "couldn't get lane selection reg offset\n");
+		return -EINVAL;
+	}
+
+	regmap_update_bits(pcie_syscon, pcie_reg, b1co_mode_sel_mask,
+			   PCIE_B1C0_MODE_SEL);
+
+	return 0;
+}
+
 static int __init dra7xx_pcie_probe(struct platform_device *pdev)
 {
 	u32 reg;
@@ -583,6 +669,7 @@ static int __init dra7xx_pcie_probe(struct platform_device *pdev)
 	int i;
 	int phy_count;
 	struct phy **phy;
+	struct device_link **link;
 	void __iomem *base;
 	struct resource *res;
 	struct dw_pcie *pci;
@@ -594,6 +681,7 @@ static int __init dra7xx_pcie_probe(struct platform_device *pdev)
 	const struct of_device_id *match;
 	const struct dra7xx_pcie_of_data *data;
 	enum dw_pcie_device_mode mode;
+	u32 b1co_mode_sel_mask;
 
 	match = of_match_device(of_match_ptr(of_dra7xx_pcie_match), dev);
 	if (!match)
@@ -601,6 +689,7 @@ static int __init dra7xx_pcie_probe(struct platform_device *pdev)
 
 	data = (struct dra7xx_pcie_of_data *)match->data;
 	mode = (enum dw_pcie_device_mode)data->mode;
+	b1co_mode_sel_mask = data->b1co_mode_sel_mask;
 
 	dra7xx = devm_kzalloc(dev, sizeof(*dra7xx), GFP_KERNEL);
 	if (!dra7xx)
@@ -634,17 +723,33 @@ static int __init dra7xx_pcie_probe(struct platform_device *pdev)
 	if (!phy)
 		return -ENOMEM;
 
+	link = devm_kzalloc(dev, sizeof(*link) * phy_count, GFP_KERNEL);
+	if (!link)
+		return -ENOMEM;
+
 	for (i = 0; i < phy_count; i++) {
 		snprintf(name, sizeof(name), "pcie-phy%d", i);
 		phy[i] = devm_phy_get(dev, name);
 		if (IS_ERR(phy[i]))
 			return PTR_ERR(phy[i]);
+
+		link[i] = device_link_add(dev, &phy[i]->dev, DL_FLAG_STATELESS);
+		if (!link[i]) {
+			ret = -EINVAL;
+			goto err_link;
+		}
 	}
 
 	dra7xx->base = base;
 	dra7xx->phy = phy;
 	dra7xx->pci = pci;
 	dra7xx->phy_count = phy_count;
+
+	if (phy_count == 2) {
+		ret = dra7xx_pcie_configure_two_lane(dev, b1co_mode_sel_mask);
+		if (ret < 0)
+			goto err_link;
+	}
 
 	ret = dra7xx_pcie_enable_phy(dra7xx);
 	if (ret) {
@@ -718,6 +823,10 @@ err_get_sync:
 	pm_runtime_disable(dev);
 	dra7xx_pcie_disable_phy(dra7xx);
 
+err_link:
+	while (--i >= 0)
+		device_link_del(link[i]);
+
 	return ret;
 }
 
@@ -726,16 +835,15 @@ static int dra7xx_pcie_suspend(struct device *dev)
 {
 	struct dra7xx_pcie *dra7xx = dev_get_drvdata(dev);
 	struct dw_pcie *pci = dra7xx->pci;
-	void __iomem *base = pci->dbi_base;
 	u32 val;
 
 	if (dra7xx->mode != DW_PCIE_RC_TYPE)
 		return 0;
 
 	/* clear MSE */
-	val = dw_pcie_read_dbi(pci, base, PCI_COMMAND, 0x4);
+	val = dw_pcie_readl_dbi(pci, PCI_COMMAND);
 	val &= ~PCI_COMMAND_MEMORY;
-	dw_pcie_write_dbi(pci, base, PCI_COMMAND, 0x4, val);
+	dw_pcie_writel_dbi(pci, PCI_COMMAND, val);
 
 	return 0;
 }
@@ -744,16 +852,15 @@ static int dra7xx_pcie_resume(struct device *dev)
 {
 	struct dra7xx_pcie *dra7xx = dev_get_drvdata(dev);
 	struct dw_pcie *pci = dra7xx->pci;
-	void __iomem *base = pci->dbi_base;
 	u32 val;
 
 	if (dra7xx->mode != DW_PCIE_RC_TYPE)
 		return 0;
 
 	/* set MSE */
-	val = dw_pcie_read_dbi(pci, base, PCI_COMMAND, 0x4);
+	val = dw_pcie_readl_dbi(pci, PCI_COMMAND);
 	val |= PCI_COMMAND_MEMORY;
-	dw_pcie_write_dbi(pci, base, PCI_COMMAND, 0x4, val);
+	dw_pcie_writel_dbi(pci, PCI_COMMAND, val);
 
 	return 0;
 }
