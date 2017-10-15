@@ -115,7 +115,7 @@
 		label = "hdmi";
 
 		type = "b";
-
+		hpd-gpios = <&gpio7 1 GPIO_ACTIVE_HIGH>; /* GPIO 193, HPD */
 		port {
 			hdmi_connector_in: endpoint {
 				remote-endpoint = <&tpd12s015_out>;
