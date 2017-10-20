@@ -440,6 +440,10 @@ rpmsg_sock_bind(struct socket *sock, struct sockaddr *uaddr, int addr_len)
 	if (sa->family != AF_RPMSG)
 		return -EINVAL;
 
+	/* do not allow fixed addresses above the dynamically allocated range */
+	if (sa->addr >= RPMSG_RESERVED_ADDRESSES)
+		return -EINVAL;
+
 	if (rpsk->rpdev)
 		return -EBUSY;
 
@@ -454,6 +458,11 @@ rpmsg_sock_bind(struct socket *sock, struct sockaddr *uaddr, int addr_len)
 				     RPMSG_ADDR_ANY);
 	if (!rpdev)
 		return -EINVAL;
+
+	if (!rpdev->ept) {
+		rpmsg_destroy_channel(rpdev);
+		return -EINVAL;
+	}
 
 	rpsk->rpdev = rpdev;
 	rpsk->unregister_rpdev = true;
@@ -544,7 +553,8 @@ static void __rpmsg_proto_cb(struct device *dev, int from_vproc_id, void *data,
 #endif
 
 	if (!sk) {
-		dev_warn(dev, "callback for deleted socket (from %d)\n", src);
+		dev_warn(dev, "callback received for deleted socket (from %d)\n",
+			 src);
 		return;
 	}
 
@@ -624,7 +634,7 @@ static int rpmsg_proto_probe(struct rpmsg_channel *rpdev)
 			id);
 
 	if (dst == RPMSG_ADDR_ANY) {
-		/* Set announce to false and avoid extra delay when binding. */
+		/* do not announce bound sockets to remote processor */
 		rpdev->announce = false;
 		return 0;
 	}
@@ -695,9 +705,6 @@ static void rpmsg_proto_remove(struct rpmsg_channel *rpdev)
 	struct list_head *sk_list;
 	struct rpmsg_socket *rpsk, *tmp;
 	struct sock *sk;
-
-	if (dst == RPMSG_ADDR_ANY)
-		return;
 
 	id = rpmsg_sock_get_proc_id(rpdev);
 
