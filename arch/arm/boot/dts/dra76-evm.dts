@@ -143,6 +143,7 @@
 		compatible = "ti,tps65917";
 		reg = <0x58>;
 		ti,system-power-controller;
+		ti,palmas-override-powerhold;
 		interrupt-controller;
 		#interrupt-cells = <2>;
 
@@ -600,6 +601,6 @@
 &m_can0 {
 	status = "okay";
 	can-transceiver {
-		max-bitrate = <2000000>;
+		max-bitrate = <5000000>;
 	};
 };
