@@ -193,12 +193,6 @@
 		>;
 	};
 
-	i2c1_pins: pinmux_i2c1_pins {
-		pinctrl-single,pins = <
-			OMAP5_IOPAD(0x01f2, PIN_INPUT_PULLUP | MUX_MODE0) /* i2c1_pmic_scl */
-			OMAP5_IOPAD(0x01f4, PIN_INPUT_PULLUP | MUX_MODE0) /* i2c1_pmic_sda */
-		>;
-	};
 
 	i2c2_pins: pinmux_i2c2_pins {
 		pinctrl-single,pins = <
@@ -399,7 +393,6 @@
 
 &i2c1 {
 	pinctrl-names = "default";
-	pinctrl-0 = <&i2c1_pins>;
 
 	clock-frequency = <400000>;
 

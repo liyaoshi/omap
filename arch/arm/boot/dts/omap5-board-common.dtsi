@@ -198,12 +198,6 @@
 		>;
 	};
 
-	i2c1_pins: pinmux_i2c1_pins {
-		pinctrl-single,pins = <
-			OMAP5_IOPAD(0x1f2, PIN_INPUT_PULLUP | MUX_MODE0)	/* i2c1_scl */
-			OMAP5_IOPAD(0x1f4, PIN_INPUT_PULLUP | MUX_MODE0)	/* i2c1_sda */
-		>;
-	};
 
 	mcspi2_pins: pinmux_mcspi2_pins {
 		pinctrl-single,pins = <
@@ -348,7 +342,8 @@
 	vmmc-supply = <&vmmcsdio_fixed>;
 	mmc-pwrseq = <&mmc3_pwrseq>;
 	bus-width = <4>;
-	non-removable;
+        keep-power-in-suspend;
+        ti,non-removable;
 	cap-power-off-card;
 	pinctrl-names = "default";
 	pinctrl-0 = <&mmc3_pins>;
@@ -378,7 +373,6 @@
 
 &i2c1 {
 	pinctrl-names = "default";
-	pinctrl-0 = <&i2c1_pins>;
 
 	clock-frequency = <400000>;
 
