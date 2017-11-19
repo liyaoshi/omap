@@ -1146,7 +1146,7 @@
                 };
 
                 sham: sham@4b100000 {
-                        compatible = "ti,omap4-sham";
+                        compatible = "ti,omap5-sham";
                         ti,hwmods = "sham";
                         reg = <0x4b100000 0x300>;
                         interrupts = <GIC_SPI 51 IRQ_TYPE_LEVEL_HIGH>;
