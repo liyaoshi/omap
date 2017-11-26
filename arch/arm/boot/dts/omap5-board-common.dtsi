@@ -82,7 +82,6 @@
 
 	tpd12s015: encoder {
 		compatible = "ti,tpd12s015";
-
 		pinctrl-names = "default";
 		pinctrl-0 = <&tpd12s015_pins>;
 
@@ -115,7 +114,7 @@
 		label = "hdmi";
 
 		type = "b";
-		hpd-gpios = <&gpio7 1 GPIO_ACTIVE_HIGH>; /* GPIO 193, HPD */
+
 		port {
 			hdmi_connector_in: endpoint {
 				remote-endpoint = <&tpd12s015_out>;
@@ -296,10 +295,10 @@
 	};
 
 	tpd12s015_pins: pinmux_tpd12s015_pins {
-		pinctrl-single,pins = <
-			OMAP5_IOPAD(0x13e, PIN_INPUT_PULLDOWN | MUX_MODE6)	/* hdmi_hpd.gpio7_193 */
-		>;
-	};
+               pinctrl-single,pins = <
+                       OMAP5_IOPAD(0x13e, PIN_INPUT_PULLDOWN | MUX_MODE6)      /* hdmi_hpd.gpio7_193 */
+               >;
+       };
 };
 
 &omap5_pmx_wkup {
