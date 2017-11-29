@@ -6,6 +6,7 @@
  * published by the Free Software Foundation.
  */
 #include "am57xx-industrial-grade.dtsi"
+#include "dra7xx-android-fstab.dtsi"
 
 / {
 	aliases {
