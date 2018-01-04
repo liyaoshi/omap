@@ -581,6 +581,12 @@
 			dmas = <&sdma 61>, <&sdma 62>;
 			dma-names = "tx", "rx";
 			pbias-supply = <&pbias_mmc_reg>;
+                        max-frequency = <192000000>;
+                        sd-uhs-sdr104;
+                        sd-uhs-sdr50;
+                        sd-uhs-ddr50;
+                        sd-uhs-sdr25;
+                        sd-uhs-sdr12;
 		};
 
 		mmc2: mmc@480b4000 {
@@ -592,7 +598,11 @@
 			ti,needs-special-reset;
 			dmas = <&sdma 47>, <&sdma 48>;
 			dma-names = "tx", "rx";
-			pbias-supply = <&pbias_mmc_reg>;
+                        max-frequency = <192000000>;
+                        sd-uhs-sdr25;
+                        sd-uhs-sdr12;
+                        mmc-hs200-1_8v;
+                        mmc-ddr-1_8v;
 		};
 
 		mmc3: mmc@480ad000 {

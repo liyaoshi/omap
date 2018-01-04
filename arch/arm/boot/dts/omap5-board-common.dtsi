@@ -43,8 +43,8 @@
 	vmmcsd_fixed: fixedregulator-mmcsd {
 		compatible = "regulator-fixed";
 		regulator-name = "vmmcsd_fixed";
-		regulator-min-microvolt = <3000000>;
-		regulator-max-microvolt = <3000000>;
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
 	};
 
 	mmc3_pwrseq: sdhci0_pwrseq {
