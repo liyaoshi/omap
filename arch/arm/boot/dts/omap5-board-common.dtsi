@@ -338,7 +338,8 @@
 };
 
 &mmc1 {
-	vmmc-supply = <&ldo9_reg>;
+        vmmc-supply = <&vmmcsd_fixed>;
+        vmmc_aux-supply = <&ldo9_reg>;
 	pinctrl-names = "default";
 	pinctrl-0 = <&mmc1_pins>;
 	bus-width = <4>;
