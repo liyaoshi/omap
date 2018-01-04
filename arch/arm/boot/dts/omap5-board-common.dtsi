@@ -216,6 +216,17 @@
 		>;
 	};
 
+        mmc1_pins: mmc1_pins_sdr104 {
+                pinctrl-single,pins = <
+                        OMAP5_IOPAD(0x1e2, PIN_INPUT_PULLUP |  MUX_MODE0)   /* mmc1_clk.clk */
+                        OMAP5_IOPAD(0x1e4, PIN_INPUT_PULLUP |  MUX_MODE0)   /* mmc1_cmd.cmd */
+                        OMAP5_IOPAD(0x1ea, PIN_INPUT_PULLUP |  MUX_MODE0)   /* mmc1_dat0.dat0 */
+                        OMAP5_IOPAD(0x1ec, PIN_INPUT_PULLUP |  MUX_MODE0)   /* mmc1_dat1.dat1 */
+                        OMAP5_IOPAD(0x1e8, PIN_INPUT_PULLUP |  MUX_MODE0)   /* mmc1_dat2.dat2 */
+                        OMAP5_IOPAD(0x1e6, PIN_INPUT_PULLUP |  MUX_MODE0)   /* mmc1_dat3.dat3 */
+                >;
+        };
+
 	mmc3_pins: pinmux_mmc3_pins {
 		pinctrl-single,pins = <
 			OMAP5_IOPAD(0x01a4, PIN_INPUT_PULLUP | MUX_MODE0) /* wlsdio_clk */
@@ -328,6 +339,8 @@
 
 &mmc1 {
 	vmmc-supply = <&ldo9_reg>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&mmc1_pins>;
 	bus-width = <4>;
 	cd-gpios = <&gpio5 24 GPIO_ACTIVE_LOW>;
 };
