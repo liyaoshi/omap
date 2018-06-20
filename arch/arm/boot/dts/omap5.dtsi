@@ -202,7 +202,7 @@
 					#size-cells = <1>;
 					ranges = <0 0x5a0 0xec>;
 
-					pbias_regulator: pbias_regulator {
+					pbias_regulator: pbias_regulator@60 {
 						compatible = "ti,pbias-omap5", "ti,pbias-omap";
 						reg = <0x60 0x4>;
 						syscon = <&omap5_padconf_global>;
@@ -586,6 +586,10 @@
 			dmas = <&sdma 61>, <&sdma 62>;
 			dma-names = "tx", "rx";
 			pbias-supply = <&pbias_mmc_reg>;
+            max-frequency = <192000000>;
+            sd-uhs-ddr50;
+            sd-uhs-sdr25;
+            sd-uhs-sdr12;
 		};
 
 		mmc2: mmc@480b4000 {
@@ -593,9 +597,15 @@
 			reg = <0x480b4000 0x400>;
 			interrupts = <GIC_SPI 86 IRQ_TYPE_LEVEL_HIGH>;
 			ti,hwmods = "mmc2";
+			ti,dual-volt;
 			ti,needs-special-reset;
 			dmas = <&sdma 47>, <&sdma 48>;
 			dma-names = "tx", "rx";
+            max-frequency = <192000000>;
+            sd-uhs-sdr25;
+            sd-uhs-sdr12;
+            mmc-hs200-1_8v;
+            mmc-ddr-1_8v;
 		};
 
 		mmc3: mmc@480ad000 {
@@ -1025,6 +1035,27 @@
 			ports-implemented = <0x1>;
 		};
 
+        gpu: gpu@56000000 {
+            compatible = "ti,dra7-sgx544", "img,sgx544";
+            reg = <0x56000000 0x10000>;
+            reg-names = "gpu_ocp_base";
+            interrupts = <GIC_SPI 21 IRQ_TYPE_LEVEL_HIGH>;
+            ti,hwmods = "gpu";
+            clocks = <&l3_iclk_div>, <&gpu_core_gclk_mux>,
+            <&gpu_hyd_gclk_mux>;
+            clock-names = "iclk", "fclk1", "fclk2";
+            };
+
+		bb2d: bb2d@59000000 {
+			compatible = "ti,dra7-bb2d";
+			reg = <0x59000000 0x0700>;
+			interrupts = <GIC_SPI 125 IRQ_TYPE_LEVEL_HIGH>;
+			ti,hwmods = "bb2d";
+			clocks = <&dpll_core_h24x2_ck>;
+			clock-names = "fclk";
+			status = "okay";
+		};
+
 		dss: dss@58000000 {
 			compatible = "ti,omap5-dss";
 			reg = <0x58000000 0x80>;
@@ -1095,6 +1126,52 @@
 				dmas = <&sdma 76>;
 				dma-names = "audio_tx";
 			};
+		};
+
+
+                aes1: aes@4b501000 {
+                        compatible = "ti,omap4-aes";
+                        ti,hwmods = "aes1";
+                        reg = <0x4b501000 0xa0>;
+                        interrupts = <GIC_SPI 85 IRQ_TYPE_LEVEL_HIGH>;
+                        dmas = <&sdma 111>, <&sdma 110>;
+                        dma-names = "tx", "rx";
+                };
+
+                aes2: aes@4b701000 {
+                        compatible = "ti,omap4-aes";
+                        ti,hwmods = "aes2";
+                        reg = <0x4b701000 0xa0>;
+                        interrupts = <GIC_SPI 64 IRQ_TYPE_LEVEL_HIGH>;
+                        dmas = <&sdma 114>, <&sdma 113>;
+                        dma-names = "tx", "rx";
+                };
+
+                des: des@480a5000 {
+                        compatible = "ti,omap4-des";
+                        ti,hwmods = "des";
+                        reg = <0x480a5000 0xa0>;
+                        interrupts = <GIC_SPI 82 IRQ_TYPE_LEVEL_HIGH>;
+                        dmas = <&sdma 117>, <&sdma 116>;
+                        dma-names = "tx", "rx";
+                };
+
+                sham: sham@4b100000 {
+                        compatible = "ti,omap5-sham";
+                        ti,hwmods = "sham";
+                        reg = <0x4b100000 0x300>;
+                        interrupts = <GIC_SPI 51 IRQ_TYPE_LEVEL_HIGH>;
+                        dmas = <&sdma 119>;
+                        dma-names = "rx";
+                };
+
+		rng: rng@48090000 {
+			compatible = "ti,omap4-rng";
+			ti,hwmods = "rng";
+			reg = <0x48090000 0x2000>;
+			interrupts = <GIC_SPI 52 IRQ_TYPE_LEVEL_HIGH>;
+			clocks = <&l3_iclk_div>;
+			clock-names = "fck";
 		};
 
 		abb_mpu: regulator-abb-mpu {
